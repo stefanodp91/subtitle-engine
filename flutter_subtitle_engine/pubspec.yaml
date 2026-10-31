@@ -1,6 +1,6 @@
 name: flutter_subtitle_engine
 description: Dart bindings for the subtitle engine (translation and Matroska text tracks), run in a dedicated isolate.
-version: 0.1.0
+version: 0.2.0
 publish_to: none
 
 environment:

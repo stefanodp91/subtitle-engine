@@ -93,4 +93,19 @@ void main() {
     expect(results[1].single, contains('notte'));
     await engine.closeTranslator(t);
   });
+
+  test('decompresses a zstd file and rejects one that is too large', () async {
+    final dir = Directory.systemTemp.createTempSync('se_zstd');
+    final source = File('${dir.path}/text.txt')..writeAsStringSync('A subtitle line.\n' * 10000);
+    final packed = await Process.run('zstd', ['-q', '-f', source.path, '-o', '${dir.path}/text.zst']);
+    expect(packed.exitCode, 0, reason: 'needs the zstd command');
+    await engine.decompressZstd('${dir.path}/text.zst', '${dir.path}/out.txt', maxBytes: source.lengthSync());
+    expect(File('${dir.path}/out.txt').readAsStringSync(), source.readAsStringSync());
+    await expectLater(
+      engine.decompressZstd('${dir.path}/text.zst', '${dir.path}/small.txt', maxBytes: 100),
+      throwsA(isA<SubtitleEngineException>().having((e) => e.code, 'code', 'too_large')),
+    );
+    expect(File('${dir.path}/small.txt').existsSync(), isFalse);
+    dir.deleteSync(recursive: true);
+  });
 }

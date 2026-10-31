@@ -45,6 +45,13 @@ SE_API char* se_mkv_text_tracks(const char* path, char** error_json);
  * NULL with code io_error, not_matroska, track_not_found or not_text_track. */
 SE_API char* se_mkv_extract(const char* path, unsigned long long track_number, char** error_json);
 
+/* Decompresses a .zst file into out_path (written as out_path.part and renamed
+ * on success). Returns 1, or 0 with *error_json code io_error, corrupt_data or
+ * too_large (more than max_bytes once decompressed); on failure no output file
+ * is left behind. */
+SE_API int se_zstd_decompress_file(const char* in_path, const char* out_path, unsigned long long max_bytes,
+                                   char** error_json);
+
 #ifdef __cplusplus
 }
 #endif

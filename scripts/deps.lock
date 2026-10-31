@@ -10,3 +10,4 @@ ruy-submodule|third_party/cpuinfo|5916273f79a21551890fd3d56fc5375a78d1598d
 googletest|tarball|https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz|7b42b4d6ed48810c5362c265a17faebe90dc2373c885e5216439d37927f02926
 nlohmann-json|file|https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp|9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6
 pcre2|file|https://github.com/PhilipHazel/pcre2/releases/download/pcre2-10.39/pcre2-10.39.tar.gz|0781bd2536ef5279b1943471fdcdbd9961a2845e1d2c9ad849b9bd98ba1a9bd4
+zstd|file|https://github.com/facebook/zstd/releases/download/v1.5.6/zstd-1.5.6.tar.gz|8c29e06cf42aacc1eafc4077ae2ec6c6fcb96a626157e0593d5e82a34fd403c1

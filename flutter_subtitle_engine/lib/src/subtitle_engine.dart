@@ -65,6 +65,11 @@ class SubtitleEngine {
     );
   }
 
+  /// Decompresses the .zst file [inPath] into [outPath]; fails with code
+  /// io_error, corrupt_data or too_large (over [maxBytes]), leaving no output.
+  Future<void> decompressZstd(String inPath, String outPath, {required int maxBytes}) =>
+      _call('zstd', [inPath, outPath, maxBytes]);
+
   /// Closes the translators still open and stops the isolate.
   Future<void> dispose() async {
     await _call('dispose', const []);
@@ -167,6 +172,10 @@ void _workerMain((SendPort, String?) init) {
           }(),
         'tracks' => withString(m[2] as String, (path) => takeString((e) => bindings.se_mkv_text_tracks(path, e))),
         'extract' => withString(m[2] as String, (path) => takeString((e) => bindings.se_mkv_extract(path, m[3] as int, e))),
+        'zstd' => withString(m[2] as String, (inPath) => withString(m[3] as String, (outPath) {
+              native((e) => bindings.se_zstd_decompress_file(inPath, outPath, m[4] as int, e), (int ok) => ok == 0);
+              return null;
+            })),
         'dispose' => () {
             translators.values.forEach(bindings.se_translator_close);
             translators.clear();
