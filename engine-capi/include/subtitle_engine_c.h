@@ -41,6 +41,11 @@ SE_API void se_translator_close(se_translator* translator);
  * NULL with *error_json code io_error or not_matroska. */
 SE_API char* se_mkv_text_tracks(const char* path, char** error_json);
 
+/* Every subtitle track, text or image, in file order (the order players
+ * number their subtitle tracks in), with the fields of se_mkv_text_tracks and
+ * "text": true|false. NULL with code io_error or not_matroska. */
+SE_API char* se_mkv_subtitle_tracks(const char* path, char** error_json);
+
 /* All cues of one text track: {"complete":true,"cues":[{"start_ms":2000,
  * "end_ms":4000,"text":"…"}]}. complete is false for a file cut short.
  * NULL with code io_error, not_matroska, track_not_found or not_text_track. */

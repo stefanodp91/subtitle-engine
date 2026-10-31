@@ -24,7 +24,7 @@ final class TranslatorHandle {
 }
 
 /// A text subtitle track inside a Matroska file.
-final class MkvTextTrack {
+class MkvTextTrack {
   const MkvTextTrack({
     required this.number,
     required this.codec,
@@ -57,6 +57,39 @@ final class MkvTextTrack {
   final bool isDefault;
   final bool isForced;
   final bool hearingImpaired;
+}
+
+/// A subtitle track of any kind, in file order (the order players number
+/// their subtitle tracks in); [isText] is false for image subtitles.
+final class MkvSubtitleTrack extends MkvTextTrack {
+  const MkvSubtitleTrack({
+    required super.number,
+    required super.codec,
+    required super.language,
+    required super.languageBcp47,
+    required super.name,
+    required super.isDefault,
+    required super.isForced,
+    required super.hearingImpaired,
+    required this.isText,
+  });
+
+  factory MkvSubtitleTrack.fromJson(Map<String, dynamic> json) {
+    final t = MkvTextTrack.fromJson(json);
+    return MkvSubtitleTrack(
+      number: t.number,
+      codec: t.codec,
+      language: t.language,
+      languageBcp47: t.languageBcp47,
+      name: t.name,
+      isDefault: t.isDefault,
+      isForced: t.isForced,
+      hearingImpaired: t.hearingImpaired,
+      isText: json['text'] as bool,
+    );
+  }
+
+  final bool isText;
 }
 
 /// One subtitle cue; rows separated by `\n`, ASS override tags kept.

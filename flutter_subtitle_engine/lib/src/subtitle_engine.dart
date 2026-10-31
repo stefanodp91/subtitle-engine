@@ -57,6 +57,11 @@ class SubtitleEngine {
     return [for (final t in jsonDecode(out) as List) MkvTextTrack.fromJson(t as Map<String, dynamic>)];
   }
 
+  Future<List<MkvSubtitleTrack>> mkvSubtitleTracks(String path) async {
+    final out = await _call('subtitle_tracks', [path]) as String;
+    return [for (final t in jsonDecode(out) as List) MkvSubtitleTrack.fromJson(t as Map<String, dynamic>)];
+  }
+
   Future<MkvExtraction> extractMkvTrack(String path, int trackNumber) async {
     final json = jsonDecode(await _call('extract', [path, trackNumber]) as String) as Map<String, dynamic>;
     return MkvExtraction(
@@ -171,6 +176,7 @@ void _workerMain((SendPort, String?) init) {
             return null;
           }(),
         'tracks' => withString(m[2] as String, (path) => takeString((e) => bindings.se_mkv_text_tracks(path, e))),
+        'subtitle_tracks' => withString(m[2] as String, (path) => takeString((e) => bindings.se_mkv_subtitle_tracks(path, e))),
         'extract' => withString(m[2] as String, (path) => takeString((e) => bindings.se_mkv_extract(path, m[3] as int, e))),
         'zstd' => withString(m[2] as String, (inPath) => withString(m[3] as String, (outPath) {
               native((e) => bindings.se_zstd_decompress_file(inPath, outPath, m[4] as int, e), (int ok) => ok == 0);

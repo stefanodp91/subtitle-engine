@@ -101,6 +101,35 @@ SE_API char* se_translate(se_translator* translator, const char* linesJson, char
 
 SE_API void se_translator_close(se_translator* translator) { delete translator; }
 
+namespace {
+
+char* tracksJson(const std::vector<subtitle_engine::TextTrack>& tracks, bool withTextFlag) {
+  json out = json::array();
+  for (const auto& t : tracks) {
+    json entry{{"number", t.number}, {"codec", t.codec}, {"language", t.language},
+               {"language_bcp47", t.languageBcp47}, {"name", t.name}, {"default", t.isDefault},
+               {"forced", t.isForced}, {"hearing_impaired", t.hearingImpaired}};
+    if (withTextFlag) entry["text"] = t.isText;
+    out.push_back(entry);
+  }
+  return duplicate(toJson(out));
+}
+
+}  // namespace
+
+SE_API char* se_mkv_subtitle_tracks(const char* path, char** errorJson) try {
+  std::string code;
+  auto tracks = subtitle_engine::listSubtitleTracks(path ? path : "", &code);
+  if (!code.empty()) {
+    setError(errorJson, code, messageFor(code));
+    return nullptr;
+  }
+  return tracksJson(tracks, true);
+} catch (...) {
+  setError(errorJson, "io_error", messageFor("io_error"));
+  return nullptr;
+}
+
 SE_API char* se_mkv_text_tracks(const char* path, char** errorJson) try {
   std::string code;
   auto tracks = subtitle_engine::listTextTracks(path ? path : "", &code);

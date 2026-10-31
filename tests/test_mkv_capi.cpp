@@ -88,3 +88,14 @@ TEST(MkvCapi, ReturnsJsonForInvalidUtf8Text) {
   ASSERT_EQ(e["cues"].size(), 1u);
   EXPECT_NE(e["cues"][0]["text"].get<std::string>().find("bad"), std::string::npos);
 }
+
+TEST(MkvCapi, ListsAllSubtitleTracks) {
+  char* error = nullptr;
+  char* out = se_mkv_subtitle_tracks(fixture("subs_mixed.mkv").c_str(), &error);
+  ASSERT_NE(out, nullptr);
+  json t = take(out);
+  ASSERT_EQ(t.size(), 2u);
+  EXPECT_FALSE(t[0]["text"].get<bool>());
+  EXPECT_TRUE(t[1]["text"].get<bool>());
+  EXPECT_EQ(t[1]["codec"], "S_TEXT/UTF8");
+}

@@ -171,3 +171,17 @@ TEST(MkvReader, RejectsDecompressionBomb) {
   packed.resize(size);
   EXPECT_FALSE(decodeBlockPayload(packed, ContentEncoding{ContentEncoding::Kind::Zlib, ""}));
 }
+
+TEST(MkvReader, ListsAllSubtitleTracksInOrder) {
+  std::string error;
+  auto tracks = listSubtitleTracks(fixture("subs_mixed.mkv"), &error);
+  ASSERT_EQ(tracks.size(), 2u) << error;
+  EXPECT_EQ(tracks[0].codec, "S_VOBSUB");
+  EXPECT_FALSE(tracks[0].isText);
+  EXPECT_EQ(tracks[1].codec, "S_TEXT/UTF8");
+  EXPECT_TRUE(tracks[1].isText);
+  EXPECT_LT(tracks[0].number, tracks[1].number);
+  auto e = extractTextTrack(fixture("subs_mixed.mkv"), tracks[1].number, &error);
+  ASSERT_TRUE(e) << error;
+  EXPECT_EQ(e->cues.size(), 5u);
+}

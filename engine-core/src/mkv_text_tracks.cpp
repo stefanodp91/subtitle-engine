@@ -260,6 +260,19 @@ std::vector<TextTrack> listTextTracks(const std::string& path, std::string* erro
   return out;
 }
 
+std::vector<TextTrack> listSubtitleTracks(const std::string& path, std::string* errorCode) {
+  Header h;
+  if (!readHeader(path, &h, errorCode)) return {};
+  std::vector<TextTrack> out;
+  for (const auto& info : h.tracks) {
+    if (info.type != kSubtitleTrackType) continue;
+    TextTrack track = info.track;
+    track.isText = isTextCodec(track.codec);
+    out.push_back(track);
+  }
+  return out;
+}
+
 std::optional<Extraction> extractTextTrack(const std::string& path, uint64_t trackNumber, std::string* errorCode) {
   Header h;
   if (!readHeader(path, &h, errorCode)) return std::nullopt;

@@ -15,7 +15,7 @@ Version `0.2.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Moz
 | `tests/` | GoogleTest tests, run on macOS without network |
 | `scripts/` | Dependencies, test translators, test videos, builds |
 | `patches/` | Fixes to the dependencies, applied by `fetch_deps.sh` |
-| `fixtures/` | Three test MKVs (SRT, ASS, WebVTT) and `short_en.srt`; `fixtures/models/` (downloaded, ignored) |
+| `fixtures/` | Test MKVs (SRT, ASS, WebVTT, and one with an image track before a text one) and `short_en.srt`; `fixtures/models/` (downloaded, ignored) |
 
 ## Setup
 
@@ -51,6 +51,7 @@ Every string the engine returns, errors included, is freed with `se_free`. Error
 | `se_translator_close(t)` | | |
 | `se_mkv_text_tracks(path, &err)` | an MKV file | `[{"number","codec","language","language_bcp47","name","default","forced","hearing_impaired"}]`, or `io_error` / `not_matroska` |
 | `se_zstd_decompress_file(in, out, max_bytes, &err)` | a `.zst` file (the Firefox models ship this way) | `1`, or `0` with `io_error` / `corrupt_data` / `too_large`; the output is written to `out.part` and renamed only on success |
+| `se_mkv_subtitle_tracks(path, &err)` | an MKV file | every subtitle track, text or image, in file order (the order players number their subtitle tracks in), with the fields above and `"text"` |
 | `se_mkv_extract(path, n, &err)` | an MKV file and a track number | `{"complete":true,"cues":[{"start_ms","end_ms","text"}]}`, or `io_error` / `not_matroska` / `track_not_found` / `not_text_track` |
 
 Text tracks: `S_TEXT/UTF8`, `S_TEXT/ASS`, `S_TEXT/SSA`, `S_TEXT/WEBVTT` (also the older `D_WEBVTT/…` mapping ffmpeg writes, reported as `S_TEXT/WEBVTT`). For ASS/SSA the text is the `Text` field, with `\N` turned into a line break and the `{\…}` override tags left to the caller. Blocks compressed with zlib or with header stripping, unknown-size clusters and truncated files (`complete: false`) are handled.
