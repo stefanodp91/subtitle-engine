@@ -77,7 +77,7 @@ final class MkvExtraction {
 
 /// An error from the engine: [code] is one of the C interface's codes
 /// (invalid_argument, model_load_failed, translation_failed, io_error,
-/// not_matroska, track_not_found, not_text_track).
+/// not_matroska, track_not_found, not_text_track, corrupt_data, too_large).
 final class SubtitleEngineException implements Exception {
   const SubtitleEngineException(this.code, this.message);
 

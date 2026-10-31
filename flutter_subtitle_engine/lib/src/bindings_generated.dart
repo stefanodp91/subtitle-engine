@@ -169,6 +169,40 @@ class SubtitleEngineBindings {
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
         )
       >();
+
+  /// Decompresses a .zst file into out_path (written as out_path.part and renamed
+  /// on success). Returns 1, or 0 with *error_json code io_error, corrupt_data or
+  /// too_large (more than max_bytes once decompressed); on failure no output file
+  /// is left behind.
+  int se_zstd_decompress_file(
+    ffi.Pointer<ffi.Char> in_path,
+    ffi.Pointer<ffi.Char> out_path,
+    int max_bytes,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_zstd_decompress_file(in_path, out_path, max_bytes, error_json);
+  }
+
+  late final _se_zstd_decompress_filePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.UnsignedLongLong,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_zstd_decompress_file');
+  late final _se_zstd_decompress_file = _se_zstd_decompress_filePtr
+      .asFunction<
+        int Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
 }
 
 final class se_translator extends ffi.Opaque {}

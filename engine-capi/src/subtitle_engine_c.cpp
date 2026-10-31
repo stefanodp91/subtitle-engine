@@ -8,6 +8,7 @@
 
 #include "subtitle_engine/mkv_text_tracks.hpp"
 #include "subtitle_engine/translator.hpp"
+#include "subtitle_engine/zstd_file.hpp"
 
 using nlohmann::json;
 
@@ -38,6 +39,8 @@ const char* messageFor(const std::string& code) {
   if (code == "not_matroska") return "the file is not a Matroska file";
   if (code == "track_not_found") return "no track with that number";
   if (code == "not_text_track") return "the track is not a text subtitle track";
+  if (code == "corrupt_data") return "the compressed data is damaged or incomplete";
+  if (code == "too_large") return "the decompressed data is larger than allowed";
   return "operation failed";
 }
 
@@ -45,7 +48,7 @@ const char* messageFor(const std::string& code) {
 
 extern "C" {
 
-SE_API const char* se_version(void) { return "0.1.0"; }
+SE_API const char* se_version(void) { return "0.2.0"; }
 
 SE_API void se_free(char* p) { std::free(p); }
 
@@ -130,6 +133,21 @@ SE_API char* se_mkv_extract(const char* path, unsigned long long trackNumber, ch
 } catch (...) {
   setError(errorJson, "io_error", messageFor("io_error"));
   return nullptr;
+}
+
+SE_API int se_zstd_decompress_file(const char* inPath, const char* outPath, unsigned long long maxBytes,
+                                   char** errorJson) try {
+  if (!inPath || !outPath) {
+    setError(errorJson, "invalid_argument", messageFor("invalid_argument"));
+    return 0;
+  }
+  const std::string code = subtitle_engine::decompressZstdFile(inPath, outPath, maxBytes);
+  if (code.empty()) return 1;
+  setError(errorJson, code, messageFor(code));
+  return 0;
+} catch (...) {
+  setError(errorJson, "io_error", messageFor("io_error"));
+  return 0;
 }
 
 }  // extern "C"

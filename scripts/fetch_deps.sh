@@ -57,4 +57,9 @@ fi
 mkdir -p "$TP/nlohmann/include/nlohmann"
 fetch_file nlohmann-json "$TP/nlohmann/include/nlohmann/json.hpp"
 fetch_file pcre2 "$TP/_dl/pcre2-10.39.tar.gz"
+fetch_file zstd "$TP/_dl/zstd-1.5.6.tar.gz"
+if [[ ! -d "$TP/zstd" ]]; then
+  mkdir -p "$TP/zstd"
+  tar -xzf "$TP/_dl/zstd-1.5.6.tar.gz" -C "$TP/zstd" --strip-components 1
+fi
 echo "dependencies ready in $TP"
