@@ -1,0 +1,22 @@
+--- a/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
++++ b/inference/3rd_party/ssplit-cpp/cmake/FindPCRE2.cmake
+@@ -24,7 +24,11 @@
+   if (EXISTS ${PCRE2_SRC_DIR}/configure)
+     set(PCRE2_URL "")
+   else()
++    if(SSPLIT_PCRE2_TARBALL)
++      set(PCRE2_URL "${SSPLIT_PCRE2_TARBALL}")
++    else()
+       set(PCRE2_URL "https://github.com/PhilipHazel/pcre2/releases/download/${PCRE2_FILENAME}/${PCRE2_TARBALL}")
++    endif()
+     message("Downloading pcre2 source code from ${PCRE2_URL}")
+   endif()
+ 
+@@ -44,6 +48,7 @@
+ 
+   set(PCRE2_CONFIGURE_OPTIONS
+     -DBUILD_SHARED_LIBS=OFF
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
+     -DCMAKE_BUILD_TYPE=Release
+     -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}

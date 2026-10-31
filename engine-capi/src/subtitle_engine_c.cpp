@@ -1,0 +1,121 @@
+#include "subtitle_engine_c.h"
+
+#include <cstdlib>
+#include <cstring>
+#include <memory>
+#include <nlohmann/json.hpp>
+#include <string>
+
+#include "subtitle_engine/mkv_text_tracks.hpp"
+#include "subtitle_engine/translator.hpp"
+
+using nlohmann::json;
+
+struct se_translator {
+  std::unique_ptr<subtitle_engine::Translator> translator;
+};
+
+namespace {
+
+char* duplicate(const std::string& text) {
+  char* out = static_cast<char*>(std::malloc(text.size() + 1));
+  std::memcpy(out, text.c_str(), text.size() + 1);
+  return out;
+}
+
+// Error messages never carry subtitle text or file paths.
+void setError(char** errorJson, const std::string& code, const std::string& message) {
+  if (errorJson) *errorJson = duplicate(json{{"code", code}, {"message", message}}.dump());
+}
+
+const char* messageFor(const std::string& code) {
+  if (code == "invalid_argument") return "invalid arguments";
+  if (code == "model_load_failed") return "could not load the translation model files";
+  if (code == "io_error") return "could not open the file";
+  if (code == "not_matroska") return "the file is not a Matroska file";
+  if (code == "track_not_found") return "no track with that number";
+  if (code == "not_text_track") return "the track is not a text subtitle track";
+  return "operation failed";
+}
+
+}  // namespace
+
+extern "C" {
+
+SE_API const char* se_version(void) { return "0.1.0"; }
+
+SE_API void se_free(char* p) { std::free(p); }
+
+SE_API se_translator* se_translator_open(const char* specJson, char** errorJson) {
+  subtitle_engine::TranslatorSpec spec;
+  try {
+    json j = json::parse(specJson ? specJson : "");
+    for (const auto& m : j.at("models")) {
+      spec.models.push_back({m.at("model").get<std::string>(), m.at("vocab").get<std::string>(),
+                             m.at("lex").get<std::string>()});
+    }
+    if (j.contains("workspace_mb")) spec.workspaceMb = j["workspace_mb"].get<size_t>();
+  } catch (const std::exception&) {
+    setError(errorJson, "invalid_argument", "spec_json is not a valid translator spec");
+    return nullptr;
+  }
+  std::string code;
+  auto translator = subtitle_engine::Translator::open(spec, &code);
+  if (!translator) {
+    setError(errorJson, code, messageFor(code));
+    return nullptr;
+  }
+  return new se_translator{std::move(translator)};
+}
+
+SE_API char* se_translate(se_translator* translator, const char* linesJson, char** errorJson) {
+  if (!translator) {
+    setError(errorJson, "invalid_argument", "translator is null");
+    return nullptr;
+  }
+  std::vector<std::string> lines;
+  try {
+    lines = json::parse(linesJson ? linesJson : "").get<std::vector<std::string>>();
+  } catch (const std::exception&) {
+    setError(errorJson, "invalid_argument", "lines_json is not an array of strings");
+    return nullptr;
+  }
+  try {
+    return duplicate(json(translator->translator->translate(lines)).dump());
+  } catch (const std::exception&) {
+    setError(errorJson, "translation_failed", messageFor("translation_failed"));
+    return nullptr;
+  }
+}
+
+SE_API void se_translator_close(se_translator* translator) { delete translator; }
+
+SE_API char* se_mkv_text_tracks(const char* path, char** errorJson) {
+  std::string code;
+  auto tracks = subtitle_engine::listTextTracks(path ? path : "", &code);
+  if (!code.empty()) {
+    setError(errorJson, code, messageFor(code));
+    return nullptr;
+  }
+  json out = json::array();
+  for (const auto& t : tracks) {
+    out.push_back({{"number", t.number}, {"codec", t.codec}, {"language", t.language},
+                   {"language_bcp47", t.languageBcp47}, {"name", t.name}, {"default", t.isDefault},
+                   {"forced", t.isForced}, {"hearing_impaired", t.hearingImpaired}});
+  }
+  return duplicate(out.dump());
+}
+
+SE_API char* se_mkv_extract(const char* path, unsigned long long trackNumber, char** errorJson) {
+  std::string code;
+  auto result = subtitle_engine::extractTextTrack(path ? path : "", trackNumber, &code);
+  if (!result) {
+    setError(errorJson, code, messageFor(code));
+    return nullptr;
+  }
+  json cues = json::array();
+  for (const auto& c : result->cues) cues.push_back({{"start_ms", c.startMs}, {"end_ms", c.endMs}, {"text", c.text}});
+  return duplicate(json{{"complete", result->complete}, {"cues", cues}}.dump());
+}
+
+}  // extern "C"

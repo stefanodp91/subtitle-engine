@@ -1,0 +1,13 @@
+diff --git a/inference/marian-fork/CMakeLists.txt b/inference/marian-fork/CMakeLists.txt
+index e22af91e..b51f83b5 100644
+--- a/inference/marian-fork/CMakeLists.txt
++++ b/inference/marian-fork/CMakeLists.txt
+@@ -322,7 +322,7 @@ else(MSVC)
+   set(DISABLE_GLOBALLY "-Wno-unused-result ${CLANG_IGNORE_UNKNOWN_CUDA} ${CLANG_IGNORE_UNUSED_VALUES} ${CLANG_IGNORE_CONSTEXPR_CONVERSION} ${ARM_WARNINGS}") # This needs to appear here as well to appease clang11+ on linux
+ 
+   # These are used in src/CMakeLists.txt on a per-target basis
+-  list(APPEND ALL_WARNINGS -Wall; -Werror; -Wextra; -Wno-unused-result; -Wno-deprecated;
++  list(APPEND ALL_WARNINGS -Wall; -Wextra; -Wno-unused-result; -Wno-deprecated;
+     -Wno-pragmas; -Wno-unused-parameter; -Wno-unused-function;
+     -Wno-unused-value; -Wno-unknown-pragmas; -Wno-sign-compare;
+     -Wno-missing-field-initializers; -Wno-use-after-free; -Wno-restrict; ${CLANG_IGNORE_UNUSED_PRIVATE_FIELD})

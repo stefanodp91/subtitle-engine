@@ -1,0 +1,13 @@
+name: SubtitleEngineBindings
+description: Bindings for engine-capi/include/subtitle_engine_c.h (regenerate with dart run ffigen).
+output: lib/src/bindings_generated.dart
+headers:
+  entry-points:
+    - ../engine-capi/include/subtitle_engine_c.h
+  include-directives:
+    - ../engine-capi/include/subtitle_engine_c.h
+preamble: |
+  // ignore_for_file: type=lint
+comments:
+  style: any
+  length: full

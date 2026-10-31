@@ -1,0 +1,12 @@
+# name | kind | source | ref or sha256
+mozilla-translations|git|https://github.com/mozilla/translations|8eada038fd45bbf6fa58a412b22f80c79887fabc
+submodule|inference/3rd_party/ssplit-cpp|a311f9865ade34db1e8e080e6cc146f55dafb067
+submodule|inference/marian-fork/src/3rd_party/sentencepiece|ae41b7740d7006596bb9257e83340b2620db9d00
+submodule|inference/marian-fork/src/3rd_party/intgemm|f7401513da71758dacce52fed1c7855549abee59
+submodule|inference/marian-fork/src/3rd_party/ruy|2d950b3bfa7ebfbe7a97ecb44b1cc4da5ac1d6f0
+submodule|inference/marian-fork/src/3rd_party/simd_utils|d0793d86aea9036a5bc77b9ca7791dff024168ca
+submodule|inference/marian-fork/src/3rd_party/onnxjs|924924b08e9596b41aeebada4a172f026be95f5a
+ruy-submodule|third_party/cpuinfo|5916273f79a21551890fd3d56fc5375a78d1598d
+googletest|tarball|https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz|7b42b4d6ed48810c5362c265a17faebe90dc2373c885e5216439d37927f02926
+nlohmann-json|file|https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp|9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6
+pcre2|file|https://github.com/PhilipHazel/pcre2/releases/download/pcre2-10.39/pcre2-10.39.tar.gz|0781bd2536ef5279b1943471fdcdbd9961a2845e1d2c9ad849b9bd98ba1a9bd4

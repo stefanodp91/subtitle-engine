@@ -1,0 +1,7 @@
+third_party/
+build/
+out/
+fixtures/models/
+*.log
+.dart_tool/
+flutter_subtitle_engine/pubspec.lock

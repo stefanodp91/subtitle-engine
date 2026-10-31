@@ -1,0 +1,62 @@
+{
+  "enit": {
+    "lex": {
+      "decompressed_sha256": "8b21914804625b2777dae7fdb636eb78f02a3eb8b7bceaa50f29ac740961da93",
+      "file": "lex.50.50.enit.s2t.bin",
+      "sha256": "a97b81e39392c07084f3e8340f119e31ae10529634dd0ad6bad1f945d94bb4c7",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/598d567f-4a7e-4ae8-b9b2-0c4edbc01aa6.zst"
+    },
+    "model": {
+      "decompressed_sha256": "248f47568788ecc351da7e5e07064d4153b4f71e011364ae2c931ffeec4d1cc2",
+      "file": "model.enit.intgemm.alphas.bin",
+      "sha256": "ed0580da44b91afd665956959d893c02e16e27240542799a524a3041c523ca17",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/3869680e-cedc-4af2-9167-bee368caa4be.zst"
+    },
+    "vocab": {
+      "decompressed_sha256": "3ef0211d4ae6db21440892f180f2019fe2bfc110a330ffa9d2eca9665e4f2bc5",
+      "file": "vocab.enit.spm",
+      "sha256": "ad75fd13305e6dc6ec6cc95e43fbb3cb2fe8b7ea60332f195785541325555db8",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/6779446e-354e-44ec-a0d1-f3435c340b86.zst"
+    }
+  },
+  "esen": {
+    "lex": {
+      "decompressed_sha256": "e2610211d3b9577d012638fe7e7e74ed7b4b708ce96b9e792e67c282a6492daa",
+      "file": "lex.50.50.esen.s2t.bin",
+      "sha256": "5c3aae52d8fddeb2e09098171cdecf059ea453474633edcebc77375b04cbcaee",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/64f16997-3cf3-4cc8-a069-b143760b1173.zst"
+    },
+    "model": {
+      "decompressed_sha256": "4aed7734152ae0045d1a69ae49c86cfda18f53c61f90e95e1d1de1c7c7c3b033",
+      "file": "model.esen.intgemm.alphas.bin",
+      "sha256": "7d1a512f3d3c420a0d87e52dccf6c83bf7eba7f4c54608824d3f86b757993a3e",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/fccccf6a-6d29-407d-82a5-0cf73b23d892.zst"
+    },
+    "vocab": {
+      "decompressed_sha256": "5ae254fa9b15aa182e70fd2a6186b1333c63a29a48043a9224c6aa4fcac058ad",
+      "file": "vocab.esen.spm",
+      "sha256": "76b9ef220b22cec379f097852ca6312cabf065d5ddfb05149d5af31aa050ec22",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/2239f64b-dfc4-41c1-9e06-d532dce7b246.zst"
+    }
+  },
+  "iten": {
+    "lex": {
+      "decompressed_sha256": "0700d6d70b30490e68ff9deca0b45b80310745b491855bde3a13e1692d0cbce1",
+      "file": "lex.50.50.iten.s2t.bin",
+      "sha256": "b5855a724527cb0a41dbe0b83de9682a389dab2300904ab84c2a12f4e9056c2e",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/6a146710-1ffc-415e-995e-18588e56f40d.zst"
+    },
+    "model": {
+      "decompressed_sha256": "21b70978ce2f3b4da7a06b5de86a09abe3acd30b9eee1b2ebb3582b9bad790bf",
+      "file": "model.iten.intgemm.alphas.bin",
+      "sha256": "5d3d5a8c463cd9f3a35d99d72165281f66c4637d5297c15418fe1e7cda49856a",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/24527d9a-7ab8-40e3-a240-f894e0244371.zst"
+    },
+    "vocab": {
+      "decompressed_sha256": "3ef0211d4ae6db21440892f180f2019fe2bfc110a330ffa9d2eca9665e4f2bc5",
+      "file": "vocab.iten.spm",
+      "sha256": "ad75fd13305e6dc6ec6cc95e43fbb3cb2fe8b7ea60332f195785541325555db8",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/352a4445-9c4b-43df-a292-c76cb040f428.zst"
+    }
+  }
+}
