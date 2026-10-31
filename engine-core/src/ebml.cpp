@@ -57,7 +57,7 @@ bool EbmlReader::readSize(uint64_t* size, bool* unknown) {
 }
 
 bool EbmlReader::readBytes(uint64_t count, std::string* out) {
-  if (pos_ + static_cast<int64_t>(count) > size_) return false;
+  if (pos_ > size_ || count > static_cast<uint64_t>(size_ - pos_)) return false;
   out->resize(count);
   if (count && fread(&(*out)[0], 1, count, file_) != count) return false;
   pos_ += static_cast<int64_t>(count);

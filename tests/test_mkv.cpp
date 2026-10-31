@@ -125,3 +125,49 @@ TEST(MkvReader, TruncatedFileReturnsPartial) {
   EXPECT_LT(e.cues.size(), 5u);
   EXPECT_FALSE(e.complete);
 }
+
+// ---- Hostile files -----------------------------------------------------------
+
+namespace {
+
+std::string element(const std::string& id, const std::string& data) {
+  std::string size(1, '\x01');  // 8-byte size
+  for (int shift = 48; shift >= 0; shift -= 8) size += static_cast<char>((data.size() >> shift) & 0xFF);
+  return id + size + data;
+}
+
+// A minimal Matroska file: one S_TEXT/UTF8 track (number 1) and one cluster
+// holding the given raw SimpleBlock body, followed by padding.
+std::string minimalMkv(const std::string& simpleBlockBody, const std::string& encodings = "") {
+  std::string ebml = element("\x1A\x45\xDF\xA3", element(std::string("\x42\x82", 2), "matroska"));
+  std::string entry = element(std::string("\xD7", 1), std::string("\x01", 1)) +
+                      element(std::string("\x83", 1), std::string("\x11", 1)) +
+                      element(std::string("\x86", 1), "S_TEXT/UTF8") + encodings;
+  std::string tracks = element("\x16\x54\xAE\x6B", element(std::string("\xAE", 1), entry));
+  std::string cluster = element("\x1F\x43\xB6\x75", element(std::string("\xE7", 1), std::string("\x00", 1)) +
+                                                        element(std::string("\xA3", 1), simpleBlockBody));
+  std::string padding = element(std::string("\xEC", 1), std::string(64, '\0'));
+  return ebml + element("\x18\x53\x80\x67", tracks + cluster + padding);
+}
+
+}  // namespace
+
+TEST(MkvReader, IgnoresBlockShorterThanItsHeader) {
+  // Track number 1 and nothing else: the 3 header bytes run past the block.
+  std::string path = writeTemp("short_block.mkv", minimalMkv(std::string("\x81", 1)));
+  std::string error;
+  auto e = extractTextTrack(path, 1, &error);
+  ASSERT_TRUE(e) << error;
+  EXPECT_TRUE(e->cues.empty());
+}
+
+TEST(MkvReader, RejectsDecompressionBomb) {
+  const std::string zeros(2 * 1024 * 1024, '\0');
+  uLongf size = compressBound(zeros.size());
+  std::string packed(size, '\0');
+  ASSERT_EQ(compress(reinterpret_cast<Bytef*>(&packed[0]), &size, reinterpret_cast<const Bytef*>(zeros.data()),
+                     zeros.size()),
+            Z_OK);
+  packed.resize(size);
+  EXPECT_FALSE(decodeBlockPayload(packed, ContentEncoding{ContentEncoding::Kind::Zlib, ""}));
+}

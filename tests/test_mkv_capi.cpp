@@ -63,3 +63,28 @@ TEST(MkvCapi, ReportsMissingFile) {
   ASSERT_NE(error, nullptr);
   EXPECT_EQ(take(error)["code"], "io_error");
 }
+
+TEST(MkvCapi, ReturnsJsonForInvalidUtf8Text) {
+  // Same layout as minimalMkv in test_mkv.cpp, with a block whose text is not UTF-8.
+  auto element = [](const std::string& id, const std::string& data) {
+    std::string size(1, '\x01');
+    for (int shift = 48; shift >= 0; shift -= 8) size += static_cast<char>((data.size() >> shift) & 0xFF);
+    return id + size + data;
+  };
+  std::string ebml = element("\x1A\x45\xDF\xA3", element(std::string("\x42\x82", 2), "matroska"));
+  std::string entry = element(std::string("\xD7", 1), std::string("\x01", 1)) +
+                      element(std::string("\x83", 1), std::string("\x11", 1)) +
+                      element(std::string("\x86", 1), "S_TEXT/UTF8");
+  std::string tracks = element("\x16\x54\xAE\x6B", element(std::string("\xAE", 1), entry));
+  std::string block = std::string("\x81\x00\x00\x00", 4) + "bad \xFF\xFE text";
+  std::string cluster = element("\x1F\x43\xB6\x75", element(std::string("\xE7", 1), std::string("\x00", 1)) +
+                                                        element(std::string("\xA3", 1), block));
+  const std::string path = std::string(SE_TMP) + "/bad_utf8.mkv";
+  std::ofstream(path, std::ios::binary) << ebml + element("\x18\x53\x80\x67", tracks + cluster);
+  char* error = nullptr;
+  char* out = se_mkv_extract(path.c_str(), 1, &error);
+  ASSERT_NE(out, nullptr) << (error ? error : "");
+  json e = take(out);
+  ASSERT_EQ(e["cues"].size(), 1u);
+  EXPECT_NE(e["cues"][0]["text"].get<std::string>().find("bad"), std::string::npos);
+}

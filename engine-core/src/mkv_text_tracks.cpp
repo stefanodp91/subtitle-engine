@@ -26,6 +26,8 @@ constexpr uint32_t kEbml = 0x1A45DFA3, kSegment = 0x18538067, kInfo = 0x1549A966
                    kAttachments = 0x1941A469, kSeekHead = 0x114D9B74;
 
 constexpr uint64_t kSubtitleTrackType = 0x11;
+// A subtitle block never needs more than this once decompressed.
+constexpr size_t kMaxBlockBytes = 1 << 20;
 
 struct TrackInfo {
   TextTrack track;
@@ -203,7 +205,7 @@ void readBlock(EbmlReader& r, int64_t end, uint64_t track, int64_t clusterTs, in
   bool unknown;
   if (!r.readSize(&number, &unknown) || number != track) return;
   std::string head;
-  if (!r.readBytes(3, &head)) return;
+  if (r.position() + 3 > end || !r.readBytes(3, &head)) return;
   int16_t relative = static_cast<int16_t>((static_cast<uint8_t>(head[0]) << 8) | static_cast<uint8_t>(head[1]));
   if (static_cast<uint8_t>(head[2]) & 0x06) return;  // laced blocks: never used for text subtitles
   std::string payload;
@@ -239,6 +241,10 @@ std::optional<std::string> decodeBlockPayload(const std::string& payload, const 
       return std::nullopt;
     }
     out.append(buffer, sizeof(buffer) - stream.avail_out);
+    if (out.size() > kMaxBlockBytes) {
+      inflateEnd(&stream);
+      return std::nullopt;
+    }
   } while (status != Z_STREAM_END);
   inflateEnd(&stream);
   return out;
