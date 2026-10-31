@@ -12,5 +12,18 @@ for kind in srt ass webvtt; do
   ffmpeg -v error -y -i "$BASE" -i "$F/short_en.srt" -map 0:v -map 0:a -map 1 -c:v copy -c:a copy -c:s "$kind" \
     -metadata:s:s:0 language=eng -metadata:s:s:0 title=English "$F/$out"
 done
+# Two subtitle tracks, the first marked as an image codec (S_VOBSUB, null-padded
+# in place of S_TEXT/UTF8): the order players number their subtitle tracks in.
+ffmpeg -v error -y -i "$BASE" -i "$F/short_en.srt" -i "$F/short_en.srt" -map 0:v -map 0:a -map 1 -map 2 -c:v copy -c:a copy \
+  -c:s srt -metadata:s:s:0 language=eng -metadata:s:s:1 language=eng "$F/subs_mixed.mkv"
+python3 -I - "$F/subs_mixed.mkv" <<'PY'
+import sys
+path = sys.argv[1]
+data = bytearray(open(path, "rb").read())
+at = data.find(b"S_TEXT/UTF8")
+assert at > 0
+data[at:at + 11] = b"S_VOBSUB\0\0\0"
+open(path, "wb").write(bytes(data))
+PY
 rm -rf "$(dirname "$BASE")"
 echo "fixtures ready"

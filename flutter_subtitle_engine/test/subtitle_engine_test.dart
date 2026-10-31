@@ -123,4 +123,9 @@ void main() {
     expect(out.single.toLowerCase(), contains('hello'));
     await engine.closeTranslator(t);
   });
+
+  test('lists every subtitle track with isText', () async {
+    final tracks = await engine.mkvSubtitleTracks('$_root/fixtures/subs_mixed.mkv');
+    expect(tracks.map((t) => (t.codec, t.isText)), [('S_VOBSUB', false), ('S_TEXT/UTF8', true)]);
+  });
 }

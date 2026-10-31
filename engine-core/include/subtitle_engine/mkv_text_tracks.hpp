@@ -17,6 +17,7 @@ struct TextTrack {
   bool isDefault = true;
   bool isForced = false;
   bool hearingImpaired = false;
+  bool isText = true;  // false for image subtitles (VobSub, PGS…), listed only by listSubtitleTracks
 };
 
 struct Cue {
@@ -32,6 +33,10 @@ struct Extraction {
 
 /// Reads only up to the first cluster. errorCode: io_error, not_matroska.
 std::vector<TextTrack> listTextTracks(const std::string& path, std::string* errorCode);
+
+/// Every subtitle track, text or image, in file order: the order in which
+/// players number their subtitle tracks. errorCode: io_error, not_matroska.
+std::vector<TextTrack> listSubtitleTracks(const std::string& path, std::string* errorCode);
 
 /// Reads the whole file, skipping every block of the other tracks.
 /// errorCode: io_error, not_matroska, track_not_found, not_text_track.

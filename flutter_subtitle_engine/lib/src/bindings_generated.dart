@@ -45,7 +45,8 @@ class SubtitleEngineBindings {
       .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
   /// spec_json: {"models":[{"model":"…","vocab":"…","lex":"…"}],"workspace_mb":128}
-  /// with one or two models. Returns NULL on failure and sets *error_json to
+  /// with one or two models; a model with separate vocabularies adds
+  /// "target_vocab" (then "vocab" is the source one). Returns NULL on failure and sets *error_json to
   /// {"code":"invalid_argument"|"model_load_failed","message":"…"}.
   ffi.Pointer<se_translator> se_translator_open(
     ffi.Pointer<ffi.Char> spec_json,
@@ -133,6 +134,33 @@ class SubtitleEngineBindings {
         >
       >('se_mkv_text_tracks');
   late final _se_mkv_text_tracks = _se_mkv_text_tracksPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// Every subtitle track, text or image, in file order (the order players
+  /// number their subtitle tracks in), with the fields of se_mkv_text_tracks and
+  /// "text": true|false. NULL with code io_error or not_matroska.
+  ffi.Pointer<ffi.Char> se_mkv_subtitle_tracks(
+    ffi.Pointer<ffi.Char> path,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_mkv_subtitle_tracks(path, error_json);
+  }
+
+  late final _se_mkv_subtitle_tracksPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_mkv_subtitle_tracks');
+  late final _se_mkv_subtitle_tracks = _se_mkv_subtitle_tracksPtr
       .asFunction<
         ffi.Pointer<ffi.Char> Function(
           ffi.Pointer<ffi.Char>,
