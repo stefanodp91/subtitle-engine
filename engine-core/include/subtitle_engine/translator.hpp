@@ -11,8 +11,9 @@ namespace subtitle_engine {
 /// The three files of one translation direction, as Firefox ships them.
 struct ModelFiles {
   std::string model;
-  std::string vocab;
+  std::string vocab;        // the source vocabulary, or the only one
   std::string lex;
+  std::string targetVocab;  // only for models with separate vocabularies
 };
 
 /// One direction, or two chained through English (the first one into English).

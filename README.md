@@ -21,7 +21,7 @@ Version `0.2.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Moz
 
 ```bash
 scripts/fetch_deps.sh        # dependencies pinned in scripts/deps.lock, with the patches
-scripts/fetch_test_models.sh # Firefox en→it, it→en, es→en into fixtures/models/
+scripts/fetch_test_models.sh # Firefox en→it, it→en, es→en, zh-Hant→en into fixtures/models/
 scripts/make_fixtures.sh     # rebuilds the three test MKVs (needs ffmpeg)
 ```
 
@@ -46,7 +46,7 @@ Every string the engine returns, errors included, is freed with `se_free`. Error
 | Function | Input | Output |
 |---|---|---|
 | `se_version()` | | `"0.2.0"` |
-| `se_translator_open(spec_json, &err)` | `{"models":[{"model","vocab","lex"}],"workspace_mb":128}`, one or two models | a translator, or `NULL` with `invalid_argument` / `model_load_failed` |
+| `se_translator_open(spec_json, &err)` | `{"models":[{"model","vocab","lex"}],"workspace_mb":128}`, one or two models; a model with separate vocabularies adds `"target_vocab"` (`"vocab"` is then the source one) | a translator, or `NULL` with `invalid_argument` / `model_load_failed` |
 | `se_translate(t, lines_json, &err)` | an array of strings, with `<i>…</i>` and `\n` | an array of the same length; lines without visible text come back unchanged |
 | `se_translator_close(t)` | | |
 | `se_mkv_text_tracks(path, &err)` | an MKV file | `[{"number","codec","language","language_bcp47","name","default","forced","hearing_impaired"}]`, or `io_error` / `not_matroska` |

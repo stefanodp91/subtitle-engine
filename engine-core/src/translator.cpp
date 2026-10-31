@@ -38,7 +38,8 @@ std::string quoted(const std::string& value) {
 std::string configYaml(const ModelFiles& files, size_t workspaceMb) {
   std::ostringstream yaml;
   yaml << "models:\n  - " << quoted(files.model) << "\n"
-       << "vocabs:\n  - " << quoted(files.vocab) << "\n  - " << quoted(files.vocab) << "\n"
+       << "vocabs:\n  - " << quoted(files.vocab) << "\n  - "
+       << quoted(files.targetVocab.empty() ? files.vocab : files.targetVocab) << "\n"
        << "shortlist:\n  - " << quoted(files.lex) << "\n  - false\n"
        << "beam-size: 1\nnormalize: 1.0\nword-penalty: 0\nmax-length-break: 128\n"
        << "mini-batch-words: 1024\nworkspace: " << workspaceMb << "\nmax-length-factor: 2.0\n"
@@ -71,7 +72,8 @@ std::unique_ptr<Translator> Translator::open(const TranslatorSpec& spec, std::st
     return nullptr;
   }
   for (const auto& files : spec.models) {
-    if (!readable(files.model) || !readable(files.vocab) || !readable(files.lex)) {
+    if (!readable(files.model) || !readable(files.vocab) || !readable(files.lex) ||
+        (!files.targetVocab.empty() && !readable(files.targetVocab))) {
       *errorCode = "model_load_failed";
       return nullptr;
     }
