@@ -57,3 +57,18 @@ TEST(TranslatorCapi, ReportsMissingModel) {
   EXPECT_EQ(e["code"], "model_load_failed");
   EXPECT_FALSE(e["message"].get<std::string>().empty());
 }
+
+TEST(TranslatorCapi, AcceptsTargetVocab) {
+  const std::string dir = modelDir("zh-Hanten");
+  json spec{{"models", json::array({{{"model", dir + "/model.zhen.intgemm.alphas.bin"},
+                                      {"vocab", dir + "/srcvocab.zhen.spm"},
+                                      {"target_vocab", dir + "/trgvocab.zhen.spm"},
+                                      {"lex", dir + "/lex.50.50.zhen.s2t.bin"}}})}};
+  char* error = nullptr;
+  se_translator* t = se_translator_open(spec.dump().c_str(), &error);
+  ASSERT_NE(t, nullptr) << (error ? error : "");
+  char* out = se_translate(t, R"(["你好，世界。"])", &error);
+  ASSERT_NE(out, nullptr);
+  EXPECT_EQ(takeJson(out).size(), 1u);
+  se_translator_close(t);
+}

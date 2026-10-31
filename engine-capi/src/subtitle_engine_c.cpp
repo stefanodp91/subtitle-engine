@@ -58,7 +58,7 @@ SE_API se_translator* se_translator_open(const char* specJson, char** errorJson)
     json j = json::parse(specJson ? specJson : "");
     for (const auto& m : j.at("models")) {
       spec.models.push_back({m.at("model").get<std::string>(), m.at("vocab").get<std::string>(),
-                             m.at("lex").get<std::string>()});
+                             m.at("lex").get<std::string>(), m.value("target_vocab", std::string())});
     }
     if (j.contains("workspace_mb")) spec.workspaceMb = j["workspace_mb"].get<size_t>();
   } catch (const std::exception&) {

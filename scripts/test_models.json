@@ -58,5 +58,31 @@
       "sha256": "ad75fd13305e6dc6ec6cc95e43fbb3cb2fe8b7ea60332f195785541325555db8",
       "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/352a4445-9c4b-43df-a292-c76cb040f428.zst"
     }
+  },
+  "zh-Hanten": {
+    "lex": {
+      "decompressed_sha256": "aa7daf6cfc85c0cd2c10e2944d66f6da55497c9c6408789f3adfded4074c2fb1",
+      "file": "lex.50.50.zhen.s2t.bin",
+      "sha256": "45332eaa996fe1b1c00c1a9fe084dfa513d84fc963c02fa84a0e9d247593685f",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/931f8f78-1b3e-4c16-8514-2b17df2cf9cf.zst"
+    },
+    "model": {
+      "decompressed_sha256": "0aee91790894458f5d367551f6edcd4c9cb97852c34f221bcbf9f4701ebcf0cd",
+      "file": "model.zhen.intgemm.alphas.bin",
+      "sha256": "5409128464ba483dcc9b8a9994a232fbc3499be55c1bfc3dafc21e8219285a45",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/32debe3a-b7f3-4e08-a771-e0cfa573d1fa.zst"
+    },
+    "srcvocab": {
+      "decompressed_sha256": "5cc6a76611dbf86219f109141533606b15ecb34eee83673bb86b2c16b14734db",
+      "file": "srcvocab.zhen.spm",
+      "sha256": "7f71a3343b2ba095545e64ad7799f5b1dae978ab5dbeea0702b6ec948654bde7",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/981d1f3a-8b0f-4773-bde8-1fb82af4e654.zst"
+    },
+    "trgvocab": {
+      "decompressed_sha256": "7bf002db37c10d3b114cc5588d7fdcb16c57d0fd1e2c34354c22cc9f0b6c3c29",
+      "file": "trgvocab.zhen.spm",
+      "sha256": "48763c078bb47d9be23559a1e50971545874382fc68a51faa7a39c2ff922768b",
+      "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/113f0d05-ad64-4311-b74f-9366f2a8c628.zst"
+    }
   }
 }

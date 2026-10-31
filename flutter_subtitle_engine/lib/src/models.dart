@@ -1,12 +1,19 @@
-/// The three files of one translation direction, as Firefox ships them.
+/// The files of one translation direction, as Firefox ships them; models
+/// with separate vocabularies give [vocab] (source) and [targetVocab].
 final class TranslatorModelFiles {
-  const TranslatorModelFiles({required this.model, required this.vocab, required this.lex});
+  const TranslatorModelFiles({required this.model, required this.vocab, required this.lex, this.targetVocab});
 
   final String model;
   final String vocab;
   final String lex;
+  final String? targetVocab;
 
-  Map<String, String> toJson() => {'model': model, 'vocab': vocab, 'lex': lex};
+  Map<String, String> toJson() => {
+        'model': model,
+        'vocab': vocab,
+        'lex': lex,
+        if (targetVocab != null) 'target_vocab': targetVocab!,
+      };
 }
 
 /// An open translator, owned by the engine's isolate.

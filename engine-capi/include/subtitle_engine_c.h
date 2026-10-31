@@ -23,7 +23,8 @@ SE_API void se_free(char* p);
 typedef struct se_translator se_translator;
 
 /* spec_json: {"models":[{"model":"…","vocab":"…","lex":"…"}],"workspace_mb":128}
- * with one or two models. Returns NULL on failure and sets *error_json to
+ * with one or two models; a model with separate vocabularies adds
+ * "target_vocab" (then "vocab" is the source one). Returns NULL on failure and sets *error_json to
  * {"code":"invalid_argument"|"model_load_failed","message":"…"}. */
 SE_API se_translator* se_translator_open(const char* spec_json, char** error_json);
 

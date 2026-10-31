@@ -108,4 +108,19 @@ void main() {
     expect(File('${dir.path}/small.txt').existsSync(), isFalse);
     dir.deleteSync(recursive: true);
   });
+
+  test('translates with a model that has separate vocabularies', () async {
+    final dir = '$_root/fixtures/models/zh-Hanten';
+    final t = await engine.openTranslator([
+      TranslatorModelFiles(
+        model: '$dir/model.zhen.intgemm.alphas.bin',
+        vocab: '$dir/srcvocab.zhen.spm',
+        targetVocab: '$dir/trgvocab.zhen.spm',
+        lex: '$dir/lex.50.50.zhen.s2t.bin',
+      ),
+    ]);
+    final out = await engine.translate(t, ['你好，世界。']);
+    expect(out.single.toLowerCase(), contains('hello'));
+    await engine.closeTranslator(t);
+  });
 }
