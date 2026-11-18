@@ -1,0 +1,23 @@
+#pragma once
+// Where a piece of audio ends, the rule of the feasibility probe: the pieces
+// after the start or a jump grow from firstPiece to piece; the first one closes
+// at its first pause after firstCut; the others at their last pause after
+// min(cutMin, piece / 2), or at their full length.
+
+#include <cstdint>
+#include <optional>
+#include <vector>
+
+#include "subtitle_engine/cue_rules.hpp"
+#include "subtitle_engine/speech_recognizer.hpp"
+
+namespace subtitle_engine {
+
+// Where the piece ends, in ms from the start of the buffer; nullopt: wait for more audio.
+// speech: what the detector heard in the buffer; pieceSinceRamp: 0 for the first piece
+// after the start, a jump or a stall. At the end of the audio the rest is the piece,
+// or 0 (dropped) when shorter than minTail.
+std::optional<int64_t> cutPoint(const PieceRules& rules, int64_t bufferedMs, const std::vector<SpeechSpan>& speech,
+                                int pieceSinceRamp, bool endOfAudio);
+
+}  // namespace subtitle_engine

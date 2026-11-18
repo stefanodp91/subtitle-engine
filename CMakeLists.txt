@@ -24,6 +24,18 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)" OR CMAKE_OSX_ARCHITECTURES MA
 endif()
 add_subdirectory(${SE_THIRD_PARTY}/mozilla-translations/inference inference EXCLUDE_FROM_ALL)
 
+# whisper.cpp (MIT), static inside the engine, on the CPU: no examples, tests,
+# server, OpenMP, Metal or BLAS. For Android the cores of the step 1 measures.
+set(BUILD_SHARED_LIBS OFF)
+foreach(opt WHISPER_BUILD_EXAMPLES WHISPER_BUILD_TESTS WHISPER_BUILD_SERVER GGML_OPENMP GGML_METAL GGML_BLAS)
+  set(${opt} OFF CACHE BOOL "" FORCE)
+endforeach()
+if(ANDROID)
+  set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
+  set(GGML_CPU_ARM_ARCH "armv8.2-a+dotprod+fp16" CACHE STRING "" FORCE)
+endif()
+add_subdirectory(${SE_THIRD_PARTY}/whisper.cpp whisper EXCLUDE_FROM_ALL)
+
 # FFmpeg, audio only (LGPL 2.1, shared), built by scripts/build_ffmpeg.sh.
 set(SE_FFMPEG_DIR "" CACHE PATH "An FFmpeg build of scripts/build_ffmpeg.sh (include/ and lib/)")
 if(NOT EXISTS ${SE_FFMPEG_DIR}/include/libavformat/avformat.h)

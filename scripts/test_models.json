@@ -59,6 +59,18 @@
       "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/352a4445-9c4b-43df-a292-c76cb040f428.zst"
     }
   },
+  "whisper": {
+    "base": {
+      "file": "ggml-base-q5_1.bin",
+      "sha256": "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898",
+      "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin"
+    },
+    "vad": {
+      "file": "ggml-silero-v6.2.0.bin",
+      "sha256": "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987",
+      "url": "https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin"
+    }
+  },
   "zh-Hanten": {
     "lex": {
       "decompressed_sha256": "aa7daf6cfc85c0cd2c10e2944d66f6da55497c9c6408789f3adfded4074c2fb1",

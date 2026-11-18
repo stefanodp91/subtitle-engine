@@ -28,6 +28,21 @@ struct JoinRules {
   std::chrono::milliseconds pause{1000};          // a sentence also ends at a pause this long between two cues
 };
 
+// How the audio is cut into pieces for the listening (DEC-840, DEC-841):
+// pieces end in a pause, the first ones after the start or a jump shorter.
+struct PieceRules {
+  std::chrono::milliseconds piece{20000}, cutMin{7000};          // DEC-840
+  std::chrono::milliseconds firstPiece{8000}, firstCut{1500};    // DEC-841
+  std::chrono::milliseconds firstPauseMin{150}, firstPauseOpen{300}, pauseMin{200}, minTail{500};
+};
+
+// BUG-289: a cue starts at its first word, by whisper's alignment heads.
+struct TimingRules {
+  std::chrono::milliseconds endPad{500};           // a cue moved whole ends this long after its last word...
+  std::chrono::milliseconds movedMin{1000};        // ...and lasts at least this long
+  std::chrono::milliseconds startBeforeEnd{200};   // a start never closer to the cue's end than this
+};
+
 struct FormatRules {
   int lineChars = 42;
   int maxLines = 2;
