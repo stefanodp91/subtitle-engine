@@ -56,6 +56,16 @@ TEST(AudioReader, ReadsAc3Eac3Dts) {
   }
 }
 
+TEST(AudioReader, ChannelChangeMidStream) {
+  // Stereo for 10 s, then mono: the resampler must follow the frames, not the first one.
+  FileSource source(fixture("audio_layout_change.mkv"));
+  auto reader = openReader(source);
+  ASSERT_TRUE(reader);
+  size_t total = 0;
+  EXPECT_EQ(pullAll(*reader, &total), PullResult::kEndOfMedia);
+  EXPECT_NEAR(static_cast<double>(total), kToneSamples, kToneSamples * 0.01);
+}
+
 TEST(AudioReader, ListsTracksAndPicksDefault) {
   FileSource source(fixture("audio_two_tracks.mkv"));
   auto reader = openReader(source);

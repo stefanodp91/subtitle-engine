@@ -15,7 +15,7 @@ Version `0.2.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Moz
 | `tests/` | GoogleTest tests, run on macOS without network |
 | `scripts/` | Dependencies, test translators, test videos, builds |
 | `patches/` | Fixes to the dependencies, applied by `fetch_deps.sh` |
-| `fixtures/` | Test MKVs (SRT, ASS, WebVTT, and one with an image track before a text one) and `short_en.srt`; `audio_*` (a 440 Hz tone of 20 s with 5 s of silence, no voice: AC-3, E-AC-3, DTS, two tracks, no index, MP4 with its index at the end, ALAC, video only); `fixtures/models/` (downloaded, ignored) |
+| `fixtures/` | Test MKVs (SRT, ASS, WebVTT, and one with an image track before a text one) and `short_en.srt`; `audio_*` (a 440 Hz tone of 20 s with 5 s of silence, no voice: AC-3, E-AC-3, DTS, two tracks, no index, MP4 with its index at the end, ALAC, video only; and AC-3 turning from stereo to mono halfway); `fixtures/models/` (downloaded, ignored) |
 
 ## Setup
 

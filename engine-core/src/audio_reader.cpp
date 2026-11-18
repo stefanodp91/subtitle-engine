@@ -21,7 +21,7 @@ struct AudioReader::Impl {
   ~Impl() {
     av_frame_free(&frame);
     av_packet_free(&packet);
-    swr_free(&resampler);
+    dropResampler();
     avcodec_free_context(&decoder);
     avformat_close_input(&format);
   }
@@ -30,6 +30,9 @@ struct AudioReader::Impl {
   AVFormatContext* format = nullptr;
   AVCodecContext* decoder = nullptr;
   SwrContext* resampler = nullptr;
+  AVChannelLayout resamplerLayout{};  // the input the resampler was set up for: a frame that differs
+  int resamplerFormat = -1;           // (a stereo track turning mono, another rate) needs a new one
+  int resamplerRate = 0;
   AVPacket* packet = nullptr;
   AVFrame* frame = nullptr;
   std::vector<AudioTrack> tracks;
@@ -49,6 +52,16 @@ struct AudioReader::Impl {
   }
   void convert(const AVFrame* in, std::vector<float>* samples, int64_t* firstSampleMs);
   bool setUpResampler(const AVFrame* in);
+  bool fitsResampler(const AVFrame* in) const {
+    return resampler && in->format == resamplerFormat && in->sample_rate == resamplerRate &&
+           av_channel_layout_compare(&in->ch_layout, &resamplerLayout) == 0;
+  }
+  void dropResampler() {
+    swr_free(&resampler);
+    av_channel_layout_uninit(&resamplerLayout);
+    resamplerFormat = -1;
+    resamplerRate = 0;
+  }
 };
 
 namespace {
@@ -91,7 +104,13 @@ bool AudioReader::Impl::setUpResampler(const AVFrame* in) {
   const int r = swr_alloc_set_opts2(&resampler, &mono, AV_SAMPLE_FMT_FLT, kSampleRate, &layout,
                                     static_cast<AVSampleFormat>(in->format), in->sample_rate, 0, nullptr);
   av_channel_layout_uninit(&layout);
-  return r >= 0 && swr_init(resampler) >= 0;
+  if (r < 0 || swr_init(resampler) < 0 || av_channel_layout_copy(&resamplerLayout, &in->ch_layout) < 0) {
+    dropResampler();
+    return false;
+  }
+  resamplerFormat = in->format;
+  resamplerRate = in->sample_rate;
+  return true;
 }
 
 // Resamples a frame (or, with in == nullptr, what the resampler still holds)
@@ -186,7 +205,7 @@ bool AudioReader::seek(int64_t positionMs) {
   const int64_t ts = av_rescale_q(positionMs, AVRational{1, 1000}, m.stream()->time_base);
   if (av_seek_frame(m.format, m.tracks[m.chosen].index, ts, AVSEEK_FLAG_BACKWARD) < 0) return false;
   avcodec_flush_buffers(m.decoder);
-  swr_free(&m.resampler);
+  m.dropResampler();
   m.trimMs = positionMs;
   m.nextMs = positionMs;
   m.flushed = false;
@@ -217,6 +236,10 @@ PullResult AudioReader::pull(std::vector<float>* samples, int64_t* firstSampleMs
       }
     }
     while (avcodec_receive_frame(m.decoder, m.frame) >= 0) {
+      if (!m.fitsResampler(m.frame)) {  // the first frame, or the input changed: give out what the old one holds
+        m.convert(nullptr, samples, firstSampleMs);
+        m.dropResampler();
+      }
       if (!m.resampler && !m.setUpResampler(m.frame)) {
         m.lastError = "decode_error";
         return PullResult::kError;

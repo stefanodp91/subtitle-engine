@@ -45,5 +45,12 @@ ffmpeg -v error -y -i "$TONE" -c:a ac3 -b:a 64k "${A[@]}" -f matroska pipe:1 > "
 ffmpeg -v error -y -i "$TONE" -c:a aac -b:a 48k "$F/audio_moov_end.mp4"
 ffmpeg -v error -y -i "$TONE" -ac 1 -ar 8000 -c:a alac "${A[@]}" "$F/audio_alac.mkv"
 ffmpeg -v error -y -f lavfi -i testsrc=duration=5:size=160x120:rate=10 -c:v libx264 -pix_fmt yuv420p "$F/audio_none.mkv"
+# AC-3 that turns from stereo to mono halfway, as broadcast recordings do:
+# two raw AC-3 streams of 10 s joined byte by byte, then put in Matroska.
+AC3A="$(dirname "$BASE")/a.ac3"; AC3B="$(dirname "$BASE")/b.ac3"
+ffmpeg -v error -y -f lavfi -i "sine=frequency=440:duration=10" -ac 2 -ar 48000 -c:a ac3 -b:a 64k "$AC3A"
+ffmpeg -v error -y -f lavfi -i "sine=frequency=660:duration=10" -ac 1 -ar 48000 -c:a ac3 -b:a 64k "$AC3B"
+cat "$AC3A" "$AC3B" > "$AC3A.joined"
+ffmpeg -v error -y -f ac3 -i "$AC3A.joined" -c:a copy "${A[@]}" "$F/audio_layout_change.mkv"
 rm -rf "$(dirname "$BASE")"
 echo "fixtures ready"
