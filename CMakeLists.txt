@@ -24,6 +24,18 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)" OR CMAKE_OSX_ARCHITECTURES MA
 endif()
 add_subdirectory(${SE_THIRD_PARTY}/mozilla-translations/inference inference EXCLUDE_FROM_ALL)
 
+# FFmpeg, audio only (LGPL 2.1, shared), built by scripts/build_ffmpeg.sh.
+set(SE_FFMPEG_DIR "" CACHE PATH "An FFmpeg build of scripts/build_ffmpeg.sh (include/ and lib/)")
+if(NOT EXISTS ${SE_FFMPEG_DIR}/include/libavformat/avformat.h)
+  message(FATAL_ERROR "Set SE_FFMPEG_DIR to a build of scripts/build_ffmpeg.sh")
+endif()
+foreach(lib avformat avcodec avutil swresample)
+  find_library(SE_FFMPEG_${lib} NAMES ${lib} PATHS ${SE_FFMPEG_DIR}/lib NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH REQUIRED)
+  add_library(ffmpeg::${lib} SHARED IMPORTED)
+  set_target_properties(ffmpeg::${lib} PROPERTIES IMPORTED_LOCATION ${SE_FFMPEG_${lib}}
+    INTERFACE_INCLUDE_DIRECTORIES ${SE_FFMPEG_DIR}/include)
+endforeach()
+
 add_subdirectory(engine-core)
 add_subdirectory(engine-capi)
 if(SE_BUILD_TOOLS)

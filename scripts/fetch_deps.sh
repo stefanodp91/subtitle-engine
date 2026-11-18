@@ -62,4 +62,10 @@ if [[ ! -d "$TP/zstd" ]]; then
   mkdir -p "$TP/zstd"
   tar -xzf "$TP/_dl/zstd-1.5.6.tar.gz" -C "$TP/zstd" --strip-components 1
 fi
+# FFmpeg sources (audio only, LGPL), built by scripts/build_ffmpeg.sh.
+fetch_file ffmpeg "$TP/_dl/ffmpeg-8.1.3.tar.xz"
+if [[ ! -d "$TP/ffmpeg" ]]; then
+  mkdir -p "$TP/ffmpeg"
+  tar -xJf "$TP/_dl/ffmpeg-8.1.3.tar.xz" -C "$TP/ffmpeg" --strip-components 1
+fi
 echo "dependencies ready in $TP"

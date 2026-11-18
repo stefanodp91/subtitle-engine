@@ -2,7 +2,8 @@
 # googletest must not reach for POSIX <regex.h>.
 target_compile_definitions(gtest PUBLIC GTEST_HAS_POSIX_RE=0)
 
-add_executable(se_tests test_version.cpp test_translator.cpp test_translator_capi.cpp test_mkv.cpp test_mkv_capi.cpp test_zstd.cpp)
+add_executable(se_tests test_version.cpp test_translator.cpp test_translator_capi.cpp test_mkv.cpp test_mkv_capi.cpp test_zstd.cpp
+  test_audio_reader.cpp)
 target_include_directories(se_tests PRIVATE ${SE_THIRD_PARTY}/nlohmann/include
   ${CMAKE_SOURCE_DIR}/engine-core/src
   ${SE_THIRD_PARTY}/mozilla-translations/inference/marian-fork/src/3rd_party/zlib)
