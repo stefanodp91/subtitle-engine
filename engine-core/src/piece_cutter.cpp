@@ -35,4 +35,16 @@ std::optional<int64_t> cutPoint(const PieceRules& rules, int64_t bufferedMs, con
   return std::nullopt;
 }
 
+std::optional<int64_t> firstCutPoint(const PieceRules& rules, int64_t bufferedMs, int64_t* lastProbeMs,
+                                     const std::function<std::vector<SpeechSpan>(int64_t)>& speech) {
+  const int64_t piece = std::min<int64_t>(rules.piece.count(), rules.firstPiece.count());
+  int64_t at = *lastProbeMs < 0 ? rules.firstCut.count() + rules.firstPauseOpen.count()
+                                : *lastProbeMs + rules.firstProbeEvery.count();
+  for (; at <= bufferedMs && at < piece; at += rules.firstProbeEvery.count()) {
+    *lastProbeMs = at;
+    if (auto cut = cutPoint(rules, at, speech(at), 0, false)) return cut;
+  }
+  return std::nullopt;
+}
+
 }  // namespace subtitle_engine

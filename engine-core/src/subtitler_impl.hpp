@@ -24,7 +24,7 @@ using Stale = std::function<bool()>;  // the step was cancelled or the film jump
 struct Cursor {  // one listen's place in the film
   int64_t atMs = 0;
   int sinceRamp = 0;          // pieces since the start, a jump or a stall
-  int64_t lastProbeMs = -1;   // the audio the first piece last looked for a pause in
+  int64_t lastProbeMs = -1;   // the last point of its audio the first piece looked for a pause at
 };
 
 struct Piece {

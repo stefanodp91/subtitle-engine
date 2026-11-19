@@ -50,14 +50,13 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
     };
     std::optional<int64_t> cut;
     bool stalled = false;
-    if (st.ended) {
+    if (cursor.sinceRamp == 0)  // BUG-311: at fixed points of the piece, whenever the audio came
+      cut = firstCutPoint(rules, buffered, &cursor.lastProbeMs,
+                          [&](int64_t untilMs) { return speechTo(cursor.atMs + untilMs); });
+    if (!cut && st.ended) {
       cut = cutPoint(rules, buffered, speechTo(cursor.atMs + std::min(buffered, limit)), cursor.sinceRamp, true);
-    } else if (buffered >= limit) {
+    } else if (!cut && buffered >= limit) {
       cut = cutPoint(rules, buffered, speechTo(cursor.atMs + limit), cursor.sinceRamp, false);
-    } else if (cursor.sinceRamp == 0 && buffered >= rules.firstCut.count() + rules.firstPauseOpen.count() &&
-               buffered >= cursor.lastProbeMs + rules.firstProbeEvery.count()) {
-      cursor.lastProbeMs = buffered;
-      cut = cutPoint(rules, buffered, speechTo(st.endMs), cursor.sinceRamp, false);
     }
     if (!cut && st.idle >= cfg.stall && buffered >= rules.minTail.count()) {
       cut = buffered;  // the download stands still: hear what arrived

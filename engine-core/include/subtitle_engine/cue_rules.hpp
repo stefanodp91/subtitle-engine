@@ -34,7 +34,7 @@ struct PieceRules {
   std::chrono::milliseconds piece{20000}, cutMin{7000};          // DEC-840
   std::chrono::milliseconds firstPiece{8000}, firstCut{1500};    // DEC-841
   std::chrono::milliseconds firstPauseMin{150}, firstPauseOpen{300}, pauseMin{200}, minTail{500};
-  std::chrono::milliseconds firstProbeEvery{500};  // the first piece looks for its pause again after this much new audio
+  std::chrono::milliseconds firstProbeEvery{500};  // the first piece looks for its pause every this much of its audio (BUG-311)
 };
 
 // BUG-289: a cue starts at its first word, by whisper's alignment heads.
