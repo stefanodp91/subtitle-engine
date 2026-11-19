@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "ready_ranges.hpp"
+#include "subtitle_engine/ready_ranges.hpp"
 
 using namespace subtitle_engine;
 

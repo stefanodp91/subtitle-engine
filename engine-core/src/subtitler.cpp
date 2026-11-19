@@ -23,6 +23,15 @@ std::unique_ptr<Subtitler> Subtitler::open(SpeechRecognizer& recognizer, MediaSo
   if (!impl->feed) return nullptr;
   // The track says its language (or the caller does): the whole film in it. Else whisper guesses.
   impl->language = whisperCode(impl->spec.trackLanguage.empty() ? impl->feed->track().language : impl->spec.trackLanguage);
+  if (!impl->spec.storePath.empty()) {
+    impl->store.emplace(impl->spec.storePath);
+    std::string ignored;  // not found, broken or another version: started over, rewritten at the first step
+    if (auto saved = impl->store->load(impl->spec.mediaId, impl->spec.targetLanguage, &ignored)) {
+      impl->ready = saved->ranges;
+      impl->storedCues = std::move(saved->cues);
+      if (impl->language.empty()) impl->language = saved->audioLanguage;
+    }
+  }
   return std::unique_ptr<Subtitler>(new Subtitler(std::move(impl)));
 }
 
@@ -68,10 +77,42 @@ void Subtitler::Impl::restartAt(int64_t positionMs) {
   ended = false;
 }
 
+// Where the queue would start is ready already (saved before, or a jump back
+// into what was heard): it goes on where that stretch ends, short again (DEC-845).
+void Subtitler::Impl::skipReady() {
+  int64_t until;
+  {
+    std::lock_guard<std::mutex> lock(readyMutex);
+    if (!ready.contains(nextFromMs)) return;
+    until = ready.endOf(nextFromMs);
+  }
+  restartAt(until);
+  feed->seek(until);
+  for (const Cue& c : storedCues)
+    if (c.startMs < until) previous = c;
+}
+
+bool Subtitler::Impl::save(const std::vector<Cue>& cues, std::string* errorCode) {
+  storedCues.insert(storedCues.end(), cues.begin(), cues.end());
+  std::stable_sort(storedCues.begin(), storedCues.end(), [](const Cue& a, const Cue& b) { return a.startMs < b.startMs; });
+  if (!store) return true;
+  StoredSubtitles s;
+  s.mediaId = spec.mediaId;
+  s.targetLanguage = spec.targetLanguage;
+  s.audioLanguage = language;
+  {
+    std::lock_guard<std::mutex> lock(readyMutex);
+    s.ranges = ready;
+  }
+  s.cues = storedCues;
+  return store->save(s, errorCode);
+}
+
 Step Subtitler::step() {
   Impl& m = *impl_;
   const int64_t jump = m.pendingSeek.exchange(-1);
   if (jump >= 0) m.restartAt(jump);
+  if (!m.waiting) m.skipReady();
   const uint64_t generation = m.generation;
   const Stale stale = [&m, generation] { return m.cancelled || m.generation != generation; };
   m.lastStage = Stage::kAudio;
@@ -128,6 +169,7 @@ Step Subtitler::Impl::finish(Step step, std::vector<Sentence> sentences, int64_t
   }
   nextFromMs = step.readyUntilMs;
   ended = atEnd;
+  if (!save(step.cues, &step.errorCode)) step.status = StepStatus::kError;  // store_failed: the cues still go out
   feed->dropBefore(std::min(first.atMs, spec.config.second.enabled ? second.atMs : first.atMs));
   report(Stage::kTranslating, 1.0);
   return step;

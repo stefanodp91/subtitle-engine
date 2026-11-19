@@ -13,7 +13,8 @@
 #include "audio_feed.hpp"
 #include "cue_cleaner.hpp"
 #include "cue_formatter.hpp"
-#include "ready_ranges.hpp"
+#include "subtitle_engine/ready_ranges.hpp"
+#include "subtitle_engine/subtitle_store.hpp"
 #include "subtitle_engine/subtitler.hpp"
 
 namespace subtitle_engine {
@@ -55,6 +56,8 @@ struct Subtitler::Impl {
   // subtitler.cpp
   void report(Stage stage, double fraction);
   void restartAt(int64_t positionMs);
+  void skipReady();
+  bool save(const std::vector<Cue>& cues, std::string* errorCode);
   Step finish(Step step, std::vector<Sentence> sentences, int64_t readyUntilMs, bool ended);
 
   SpeechRecognizer& recognizer;
@@ -68,6 +71,9 @@ struct Subtitler::Impl {
   std::atomic<int64_t> pendingSeek{-1};
   std::mutex readyMutex;  // ready is asked by seek() from any thread
   ReadyRanges ready;
+
+  std::optional<SubtitleStore> store;
+  std::vector<Cue> storedCues;  // every cue given out (or saved before), in time order
 
   CueCleaner cleaner;
   CueFormatter formatter;

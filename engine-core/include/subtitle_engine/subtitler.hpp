@@ -35,6 +35,8 @@ struct SubtitlerSpec {
   std::string targetLanguage;  // BCP 47
   std::string trackLanguage;   // ISO 639-2 of the track to hear; empty: the file's default track and its tag
   std::string prompt;          // the characters' names
+  std::string storePath;       // where the subtitles generated so far are kept; empty: nowhere
+  std::string mediaId;         // the fingerprint of the film's version, from the caller (DEC-858)
   SubtitlerConfig config;
 };
 
@@ -52,7 +54,8 @@ using Progress = std::function<void(Stage stage, double fraction)>;
 
 class Subtitler {
  public:
-  /// errorCode as AudioReader::open.
+  /// errorCode as AudioReader::open. With a store the stretches saved for the same version and
+  /// target language are skipped; a file of another version, or broken, is started over.
   static std::unique_ptr<Subtitler> open(SpeechRecognizer& recognizer, MediaSource& source, SubtitlerSpec spec,
                                          Progress progress, std::string* errorCode);
   ~Subtitler();
@@ -62,7 +65,7 @@ class Subtitler {
   void setTranslator(TextTranslator* translator);  // not owned; null when the audio is in the target language
   void seek(int64_t positionMs);  // any thread: outside the ready stretch, the running step returns kCancelled
   void cancel();                  // any thread
-  Step step();                    // blocking: hears, cleans, translates and shapes one piece
+  Step step();                    // blocking: hears, cleans, translates and shapes one piece, then saves
 
   struct Impl;
 
