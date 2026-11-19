@@ -45,8 +45,9 @@ struct TimingRules {
 };
 
 // DEC-886: the audio heard twice, cut in different places, chosen stretch by stretch.
+// Off by default (DEC-893): in the engine it gained less than a point and cost half the speed.
 struct DoubleListenRules {
-  bool enabled = true;
+  bool enabled = false;
   std::chrono::milliseconds secondPiece{14000};    // the second listen's pieces (the first's are PieceRules::piece)
   double margin = 0.0;                             // the second listen wins a stretch when surer by more than this
   double fillSure = 0.6;                           // a stretch only the second listen heard, taken from this confidence

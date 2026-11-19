@@ -63,8 +63,19 @@ TEST_F(SubtitlerTest, FirstPieceHeardOnce) {
   EXPECT_EQ(rec.calls().size(), 1u);
 }
 
-TEST_F(SubtitlerTest, SecondListenUsesShorterPieces) {
+// DEC-893: the double listen is off unless the config turns it on.
+TEST_F(SubtitlerTest, DoubleListenOffByDefault) {
+  EXPECT_FALSE(SubtitlerConfig{}.second.enabled);
   auto sub = openSubtitler(rec, source, spec());
+  sub->setTranslator(&translator);
+  for (int i = 0; i < 3; ++i) sub->step();
+  EXPECT_EQ(rec.calls().size(), 3u);
+}
+
+TEST_F(SubtitlerTest, SecondListenUsesShorterPieces) {
+  SubtitlerSpec twice = spec();
+  twice.config.second.enabled = true;
+  auto sub = openSubtitler(rec, source, twice);
   sub->setTranslator(&translator);
   sub->step();
   Step second = sub->step();
@@ -87,7 +98,9 @@ TEST_F(SubtitlerTest, SecondListenUsesShorterPieces) {
 
 TEST_F(SubtitlerTest, MergedCueAcrossBoundaryOnce) {
   rec.cues = {{23000, 25500, "Across the boundary."}};
-  auto sub = openSubtitler(rec, source, spec());
+  SubtitlerSpec twice = spec();
+  twice.config.second.enabled = true;
+  auto sub = openSubtitler(rec, source, twice);
   sub->setTranslator(&translator);
   int seen = 0;
   sub->step();               // 0 to 8 s
