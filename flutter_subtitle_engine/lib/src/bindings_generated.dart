@@ -231,6 +231,263 @@ class SubtitleEngineBindings {
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
         )
       >();
+
+  /// spec_json: {"model":"…","vad":"…","threads":2,"vad_threads":1,"alignment_heads":"small",
+  /// "end_pad_ms":500,"moved_min_ms":1000,"start_before_end_ms":200}; alignment_heads: none, base,
+  /// small, large_v3_turbo (the model's own). NULL with code invalid_argument or model_load_failed.
+  ffi.Pointer<se_listener> se_listener_open(
+    ffi.Pointer<ffi.Char> spec_json,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_listener_open(spec_json, error_json);
+  }
+
+  late final _se_listener_openPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<se_listener> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_listener_open');
+  late final _se_listener_open = _se_listener_openPtr
+      .asFunction<
+        ffi.Pointer<se_listener> Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  void se_listener_close(ffi.Pointer<se_listener> listener) {
+    return _se_listener_close(listener);
+  }
+
+  late final _se_listener_closePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<se_listener>)>>(
+        'se_listener_close',
+      );
+  late final _se_listener_close = _se_listener_closePtr
+      .asFunction<void Function(ffi.Pointer<se_listener>)>();
+
+  ffi.Pointer<se_subtitler> se_subtitler_open(
+    ffi.Pointer<se_listener> listener,
+    ffi.Pointer<se_media_source> source,
+    ffi.Pointer<ffi.Char> spec_json,
+    se_progress_fn progress,
+    ffi.Pointer<ffi.Void> progress_opaque,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_subtitler_open(
+      listener,
+      source,
+      spec_json,
+      progress,
+      progress_opaque,
+      error_json,
+    );
+  }
+
+  late final _se_subtitler_openPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<se_subtitler> Function(
+            ffi.Pointer<se_listener>,
+            ffi.Pointer<se_media_source>,
+            ffi.Pointer<ffi.Char>,
+            se_progress_fn,
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_subtitler_open');
+  late final _se_subtitler_open = _se_subtitler_openPtr
+      .asFunction<
+        ffi.Pointer<se_subtitler> Function(
+          ffi.Pointer<se_listener>,
+          ffi.Pointer<se_media_source>,
+          ffi.Pointer<ffi.Char>,
+          se_progress_fn,
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// The translator for the audio's language into the target one (NULL: none). Returns 1, or 0
+  /// with invalid_argument. The translator stays the caller's.
+  int se_subtitler_set_translator(
+    ffi.Pointer<se_subtitler> subtitler,
+    ffi.Pointer<se_translator> translator,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_subtitler_set_translator(subtitler, translator, error_json);
+  }
+
+  late final _se_subtitler_set_translatorPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<se_subtitler>,
+            ffi.Pointer<se_translator>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_subtitler_set_translator');
+  late final _se_subtitler_set_translator = _se_subtitler_set_translatorPtr
+      .asFunction<
+        int Function(
+          ffi.Pointer<se_subtitler>,
+          ffi.Pointer<se_translator>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// Blocking: hears, cleans, translates and shapes one piece. Returns
+  /// {"status":"cues"|"end_of_media"|"cancelled"|"translator_needed","from_ms":…,"ready_until_ms":…,
+  /// "audio_language":"en","cues":[{"start_ms","end_ms","text"}]}, or NULL with code io_error,
+  /// no_audio, unsupported_codec, needs_end_of_file, store_failed or decode_error.
+  ffi.Pointer<ffi.Char> se_subtitler_step(
+    ffi.Pointer<se_subtitler> subtitler,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_subtitler_step(subtitler, error_json);
+  }
+
+  late final _se_subtitler_stepPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<se_subtitler>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_subtitler_step');
+  late final _se_subtitler_step = _se_subtitler_stepPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<se_subtitler>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// Any thread. Outside the stretch already heard, a running step returns "cancelled".
+  void se_subtitler_seek(ffi.Pointer<se_subtitler> subtitler, int position_ms) {
+    return _se_subtitler_seek(subtitler, position_ms);
+  }
+
+  late final _se_subtitler_seekPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<se_subtitler>, ffi.LongLong)
+        >
+      >('se_subtitler_seek');
+  late final _se_subtitler_seek = _se_subtitler_seekPtr
+      .asFunction<void Function(ffi.Pointer<se_subtitler>, int)>();
+
+  void se_subtitler_cancel(ffi.Pointer<se_subtitler> subtitler) {
+    return _se_subtitler_cancel(subtitler);
+  }
+
+  late final _se_subtitler_cancelPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<se_subtitler>)>>(
+        'se_subtitler_cancel',
+      );
+  late final _se_subtitler_cancel = _se_subtitler_cancelPtr
+      .asFunction<void Function(ffi.Pointer<se_subtitler>)>();
+
+  void se_subtitler_close(ffi.Pointer<se_subtitler> subtitler) {
+    return _se_subtitler_close(subtitler);
+  }
+
+  late final _se_subtitler_closePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<se_subtitler>)>>(
+        'se_subtitler_close',
+      );
+  late final _se_subtitler_close = _se_subtitler_closePtr
+      .asFunction<void Function(ffi.Pointer<se_subtitler>)>();
+
+  /// The subtitles saved for a film's version: {"audio_language":"en","ranges":[[0,64000]],
+  /// "cues":[{"start_ms","end_ms","text"}]}, or NULL with code not_found, corrupt_data or other_media.
+  ffi.Pointer<ffi.Char> se_subtitles_load(
+    ffi.Pointer<ffi.Char> path,
+    ffi.Pointer<ffi.Char> media_id,
+    ffi.Pointer<ffi.Char> target_language,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_subtitles_load(path, media_id, target_language, error_json);
+  }
+
+  late final _se_subtitles_loadPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_subtitles_load');
+  late final _se_subtitles_load = _se_subtitles_loadPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
 }
 
 final class se_translator extends ffi.Opaque {}
+
+/// The film, as the caller can read it: the engine never opens a file or a network
+/// connection for it. read: up to length bytes at offset into buffer; should not block
+/// for long (SE_READ_WAIT instead). size: the whole size in bytes, -1 when unknown.
+/// The struct is copied; opaque must stay valid while the se_subtitler is open.
+final class se_media_source extends ffi.Struct {
+  external ffi.Pointer<ffi.Void> opaque;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.LongLong Function(
+        ffi.Pointer<ffi.Void> opaque,
+        ffi.UnsignedLongLong offset,
+        ffi.Pointer<ffi.UnsignedChar> buffer,
+        ffi.UnsignedLongLong length,
+      )
+    >
+  >
+  read;
+
+  @ffi.LongLong()
+  external int size;
+}
+
+final class se_listener extends ffi.Opaque {}
+
+final class se_subtitler extends ffi.Opaque {}
+
+/// The progress of a step: its stage and the fraction of the step done (0 to 1, never decreasing).
+typedef se_progress_fn =
+    ffi.Pointer<ffi.NativeFunction<se_progress_fnFunction>>;
+typedef se_progress_fnFunction =
+    ffi.Void Function(
+      ffi.Pointer<ffi.Void> opaque,
+      ffi.Int stage,
+      ffi.Double fraction,
+    );
+typedef Dartse_progress_fnFunction =
+    void Function(ffi.Pointer<ffi.Void> opaque, int stage, double fraction);
+
+const int SE_STAGE_AUDIO = 0;
+
+const int SE_STAGE_LISTENING = 1;
+
+const int SE_STAGE_TRANSLATING = 2;
+
+const int SE_READ_END = 0;
+
+const int SE_READ_WAIT = -1;
+
+const int SE_READ_ERROR = -2;

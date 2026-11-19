@@ -1,4 +1,4 @@
-add_library(subtitle_engine SHARED src/subtitle_engine_c.cpp)
+add_library(subtitle_engine SHARED src/subtitle_engine_c.cpp src/subtitler_capi.cpp)
 target_include_directories(subtitle_engine
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${SE_THIRD_PARTY}/nlohmann/include)

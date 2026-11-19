@@ -6,7 +6,7 @@ add_executable(se_tests test_version.cpp test_translator.cpp test_translator_cap
   test_audio_reader.cpp test_cue_cleaner.cpp test_sentence_joiner.cpp test_cue_formatter.cpp
   test_piece_cutter.cpp test_cue_timing.cpp test_listener.cpp
   test_ready_ranges.cpp test_listen_merge.cpp test_subtitler.cpp test_subtitler_integration.cpp
-  test_subtitle_store.cpp)
+  test_subtitle_store.cpp test_subtitler_capi.cpp)
 target_include_directories(se_tests PRIVATE ${SE_THIRD_PARTY}/nlohmann/include
   ${CMAKE_SOURCE_DIR}/engine-core/src
   ${SE_THIRD_PARTY}/mozilla-translations/inference/marian-fork/src/3rd_party/zlib)

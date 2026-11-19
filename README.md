@@ -2,7 +2,7 @@
 
 An engine for subtitles: it translates subtitle lines on the device, offline, with the Firefox Translations models, reads the text tracks inside Matroska (MKV) files, and reads a film's audio through a read function of its caller (FFmpeg, audio only). Built for apps: a C interface with JSON data, and a Dart package that drives it from a dedicated isolate.
 
-Version `0.2.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Mozilla's translation engine it builds on.
+Version `0.3.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Mozilla's translation engine it builds on.
 
 ## Layout
 
@@ -37,6 +37,8 @@ cmake -S . -B build/mac-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DSE_BUILD_T
 (cd flutter_subtitle_engine && dart test)                            # uses build/mac-release
 scripts/build_android.sh subtitle_engine                             # out/android/arm64-v8a/libsubtitle_engine.so and FFmpeg's four libraries
 SE_BUILD_TOOLS=ON scripts/build_android.sh subtitle_engine se_cli   # se_cli for Android too
+build/mac-release/tools/se_cli listen --listener <json> --spec <json> --input <video> [--translator <json>] \
+  [--from-ms N] [--seconds S] [--bytes-per-sec B] [--srt out.srt] [--stats out.jsonl]   # subtitles from the audio; cues only in --srt
 ```
 
 Android: `arm64-v8a` (FFmpeg is built for it only), `android-29`, NDK `28.2.13676358`, `c++_static`. The library exports only the `se_*` functions; `libavformat.so`, `libavcodec.so`, `libavutil.so` and `libswresample.so` go next to it.
@@ -49,7 +51,7 @@ Every string the engine returns, errors included, is freed with `se_free`. Error
 
 | Function | Input | Output |
 |---|---|---|
-| `se_version()` | | `"0.2.0"` |
+| `se_version()` | | `"0.3.0"` |
 | `se_translator_open(spec_json, &err)` | `{"models":[{"model","vocab","lex"}],"workspace_mb":128}`, one or two models; a model with separate vocabularies adds `"target_vocab"` (`"vocab"` is then the source one) | a translator, or `NULL` with `invalid_argument` / `model_load_failed` |
 | `se_translate(t, lines_json, &err)` | an array of strings, with `<i>…</i>` and `\n` | an array of the same length; lines without visible text come back unchanged |
 | `se_translator_close(t)` | | |
@@ -57,6 +59,12 @@ Every string the engine returns, errors included, is freed with `se_free`. Error
 | `se_zstd_decompress_file(in, out, max_bytes, &err)` | a `.zst` file (the Firefox models ship this way) | `1`, or `0` with `io_error` / `corrupt_data` / `too_large`; the output is written to `out.part` and renamed only on success |
 | `se_mkv_subtitle_tracks(path, &err)` | an MKV file | every subtitle track, text or image, in file order (the order players number their subtitle tracks in), with the fields above and `"text"` |
 | `se_mkv_extract(path, n, &err)` | an MKV file and a track number | `{"complete":true,"cues":[{"start_ms","end_ms","text"}]}`, or `io_error` / `not_matroska` / `track_not_found` / `not_text_track` |
+| `se_listener_open(spec_json, &err)` | `{"model","vad","threads":2,"vad_threads":1,"alignment_heads":"small","end_pad_ms":500,"moved_min_ms":1000,"start_before_end_ms":200}` (`alignment_heads`: `none`, `base`, `small`, `large_v3_turbo`) | a listener (whisper.cpp and Silero), or `NULL` with `invalid_argument` / `model_load_failed` |
+| `se_subtitler_open(listener, &source, spec_json, progress, opaque, &err)` | an `se_media_source` (the caller's read function: bytes, `SE_READ_END`, `SE_READ_WAIT`, `SE_READ_ERROR`), `{"target_language","track_language","prompt","store":{"path","media_id"},"config":{…}}` (every config key optional: see the header) | the queue, or `NULL` with `invalid_argument` / `io_error` / `no_audio` / `unsupported_codec` / `needs_end_of_file` |
+| `se_subtitler_set_translator(s, t, &err)` | a translator (or `NULL`), still the caller's | `1` |
+| `se_subtitler_step(s, &err)` | | blocking, one piece: `{"status","from_ms","ready_until_ms","audio_language","cues":[…]}` (status: `cues`, `end_of_media`, `cancelled`, `translator_needed`), or `NULL` with `io_error` / `store_failed` / … |
+| `se_subtitler_seek(s, ms)`, `se_subtitler_cancel(s)`, `se_subtitler_close(s)` | any thread for seek and cancel | outside the stretch already heard a running step returns `cancelled` |
+| `se_subtitles_load(path, media_id, target, &err)` | the file of a `store` | `{"audio_language","ranges":[[from,to]],"cues":[…]}`, or `NULL` with `not_found` / `corrupt_data` / `other_media` |
 
 Text tracks: `S_TEXT/UTF8`, `S_TEXT/ASS`, `S_TEXT/SSA`, `S_TEXT/WEBVTT` (also the older `D_WEBVTT/…` mapping ffmpeg writes, reported as `S_TEXT/WEBVTT`). For ASS/SSA the text is the `Text` field, with `\N` turned into a line break and the `{\…}` override tags left to the caller. Blocks compressed with zlib or with header stripping, unknown-size clusters and truncated files (`complete: false`) are handled.
 
