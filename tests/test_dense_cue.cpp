@@ -53,3 +53,20 @@ TEST(DenseCue, CountsCodePoints) {
   EXPECT_EQ(from({cue(7800, 8000, "こんにちは、元気ですか。今日は")}), 7800);
   EXPECT_EQ(from({cue(7800, 8000, "こんにちは、元気ですか。")}), std::nullopt);
 }
+
+// BUG-310: a cue that started before the packed one and ends after it is heard again
+// too, from its start, or part of it would come out past the stretch.
+TEST(DenseCue, CrossingCueHeardAgainToo) {
+  const std::string longLine = "Emo, listen, but, Emo, look, but... listen. You have to learn to listen.";
+  EXPECT_EQ(from({cue(1000, 9000, longLine), cue(7800, 8000, kPacked)}), 1000);
+}
+
+TEST(DenseCue, CrossingCuesChain) {
+  EXPECT_EQ(from({cue(1000, 4000, "A first line of speech here."), cue(3500, 9000, "A second line that runs on."),
+                  cue(7800, 8000, kPacked)}),
+            1000);
+}
+
+TEST(DenseCue, CrossingCueFromPieceStartStays) {
+  EXPECT_EQ(from({cue(200, 9000, "A line that starts with the piece."), cue(7800, 8000, kPacked)}), std::nullopt);
+}

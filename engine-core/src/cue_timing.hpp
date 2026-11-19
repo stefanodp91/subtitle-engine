@@ -12,7 +12,9 @@ namespace subtitle_engine {
 // firstWordMs, lastWordMs: the alignment times of the cue's first and last text token; -1: none.
 // With the first word after the cue's end (whisper's times lost, as in a loop) the cue moves
 // whole to [first, max(last + endPad, first + movedMin)]; else it starts at the first word,
-// never before whisper's start nor closer than startBeforeEnd to its end.
-Cue alignCue(const Cue& heard, int64_t firstWordMs, int64_t lastWordMs, const TimingRules& rules);
+// never before whisper's start nor closer than startBeforeEnd to its end. audioEndMs: where the
+// piece's audio ends; whisper and its heads can put times in the padding after it (BUG-310):
+// no time of the cue goes past it, and a first word there leaves whisper's times.
+Cue alignCue(const Cue& heard, int64_t firstWordMs, int64_t lastWordMs, int64_t audioEndMs, const TimingRules& rules);
 
 }  // namespace subtitle_engine

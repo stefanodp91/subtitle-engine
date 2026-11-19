@@ -14,7 +14,8 @@ namespace subtitle_engine {
 // Where the listening has to start again in a piece just heard: the start of the
 // earliest cue with more than rules.denseCharsPerSecond characters a second (code
 // points, at least rules.denseMinChars), at least minAdvance after the piece's start
-// so the listening always moves on; none otherwise. A loop (compression ratio above
+// so the listening always moves on; none otherwise. A cue that crosses that point moves it
+// back to its own start (BUG-310), with the same minAdvance. A loop (compression ratio above
 // loopRatio) is left to the cleaning.
 std::optional<int64_t> rehearFrom(const std::vector<HeardCue>& cues, int64_t pieceStartMs, const RehearRules& rules,
                                   std::chrono::milliseconds minAdvance, double loopRatio);

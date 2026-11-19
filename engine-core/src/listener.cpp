@@ -128,6 +128,7 @@ Heard Listener::hear(const float* samples, size_t count, int64_t startMs, const 
   }
   heard.detectedLanguage = options.language.empty() ? whisper_lang_str(whisper_full_lang_id(ctx)) : options.language;
   const whisper_token eot = whisper_token_eot(ctx);
+  const int64_t audioEndMs = startMs + std::llround(seconds * 1000);  // the alignment's padding starts here
   for (int s = 0; s < whisper_full_n_segments(ctx); ++s) {
     std::string text = whisper_full_get_segment_text(ctx, s);
     const size_t b = text.find_first_not_of(' ');
@@ -148,7 +149,7 @@ Heard Listener::hear(const float* samples, size_t count, int64_t startMs, const 
       lastWord = d.t_dtw < 0 ? -1 : startMs + d.t_dtw * kCentisecondMs;
     }
     hc.sure = hc.tokens ? sum / hc.tokens : 0.0;
-    hc.cue = alignCue(hc.cue, firstWord, lastWord, impl_->spec.timing);
+    hc.cue = alignCue(hc.cue, firstWord, lastWord, audioEndMs, impl_->spec.timing);
     heard.cues.push_back(std::move(hc));
   }
   return heard;

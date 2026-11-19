@@ -19,6 +19,17 @@ std::optional<int64_t> rehearFrom(const std::vector<HeardCue>& cues, int64_t pie
     if (loopingText(c.text, loopRatio)) continue;
     at = c.startMs;
   }
+  if (!at) return at;
+  // BUG-310: a cue that crosses the point is heard again too, from its start.
+  for (bool moved = true; moved;) {
+    moved = false;
+    for (const auto& h : cues)
+      if (h.cue.startMs < *at && h.cue.endMs > *at) {
+        at = h.cue.startMs;
+        moved = true;
+      }
+  }
+  if (*at < pieceStartMs + minAdvance.count()) return std::nullopt;
   return at;
 }
 
