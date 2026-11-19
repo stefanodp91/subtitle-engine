@@ -9,7 +9,7 @@ Cue alignCue(const Cue& heard, int64_t firstWordMs, int64_t lastWordMs, int64_t 
   Cue in = heard;
   if (in.endMs > audioEndMs) {
     in.endMs = audioEndMs;
-    in.startMs = std::min(in.startMs, audioEndMs - rules.startBeforeEnd.count());
+    in.startMs = std::min<int64_t>(in.startMs, audioEndMs - rules.startBeforeEnd.count());
   }
   if (firstWordMs < 0 || firstWordMs >= audioEndMs) return in;
   lastWordMs = std::min(lastWordMs, audioEndMs);
