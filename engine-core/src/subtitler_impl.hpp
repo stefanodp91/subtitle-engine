@@ -51,6 +51,7 @@ struct Subtitler::Impl {
   Listened listen(const Stale& stale);
   Piece waitPiece(Cursor& cursor, const PieceRules& rules, const Stale& stale);
   bool hearInto(const Piece& piece, std::vector<HeardCue>* into, const Stale& stale);
+  void rehearDense(Piece& piece, std::vector<HeardCue>* cues, size_t heardFrom, Cursor& cursor);
   bool keeps(const std::vector<Cue>& cues) const;
 
   // subtitler.cpp

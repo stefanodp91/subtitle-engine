@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <chrono>
 #include <mutex>
 #include <string>
@@ -19,6 +20,9 @@ struct ScriptCue {
   std::string text;
   double sure = 0.9;
   int tokens = 5;
+  // Heard only by a piece that starts in [pieceFromMs, pieceToMs]: whisper hears a
+  // stretch differently depending on where its piece starts (BUG-307).
+  int64_t pieceFromMs = INT64_MIN, pieceToMs = INT64_MAX;
 };
 
 class FakeRecognizer : public subtitle_engine::SpeechRecognizer {
@@ -59,7 +63,7 @@ class FakeRecognizer : public subtitle_engine::SpeechRecognizer {
     }
     heard.detectedLanguage = options.language.empty() ? language : options.language;
     for (const auto& c : cues)  // whisper writes what starts in the piece
-      if (c.startMs >= startMs && c.startMs < startMs + duration)
+      if (c.startMs >= startMs && c.startMs < startMs + duration && startMs >= c.pieceFromMs && startMs <= c.pieceToMs)
         heard.cues.push_back({{c.startMs, c.endMs, c.text}, c.sure, c.tokens});
     heard.spoken = !heard.cues.empty();
     return heard;

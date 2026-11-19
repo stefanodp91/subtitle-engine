@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 #include <vector>
 
 #include "subtitle_engine/cue_rules.hpp"
@@ -27,6 +28,10 @@ std::vector<ListenStretch> listenStretches(const std::vector<HeardCue>& first, c
 // tokens) wins, the second only by more than margin; a stretch only the second heard from
 // fillSure; a winner keep() rejects, or a loop, leaves the stretch to the other listen.
 std::vector<HeardCue> mergeStretch(const ListenStretch& stretch, const DoubleListenRules& rules, const KeepCheck& keep);
+
+// Whether a text is a loop of the model: it compresses far better than speech does
+// (whisper's own check, ratio above maxRatio).
+bool loopingText(const std::string& text, double maxRatio);
 
 std::vector<HeardCue> mergeListens(const std::vector<HeardCue>& first, const std::vector<HeardCue>& second,
                                    const DoubleListenRules& rules, const KeepCheck& keep);

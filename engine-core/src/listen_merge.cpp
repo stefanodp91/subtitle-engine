@@ -20,17 +20,10 @@ std::optional<double> sureOf(const std::vector<HeardCue>& cues) {
   return tokens ? sum / tokens : 0.0;
 }
 
-// A loop of the model: its text compresses far better than speech does (whisper's own check).
 bool looping(const std::vector<HeardCue>& cues, double maxRatio) {
   std::string text;
   for (const auto& c : cues) text += (text.empty() ? "" : " ") + c.cue.text;
-  if (text.empty()) return false;
-  uLongf size = compressBound(static_cast<uLong>(text.size()));
-  std::vector<Bytef> out(size);
-  if (compress2(out.data(), &size, reinterpret_cast<const Bytef*>(text.data()), static_cast<uLong>(text.size()),
-                Z_DEFAULT_COMPRESSION) != Z_OK || size == 0)
-    return false;
-  return static_cast<double>(text.size()) / static_cast<double>(size) > maxRatio;
+  return loopingText(text, maxRatio);
 }
 
 bool kept(const std::vector<HeardCue>& cues, const DoubleListenRules& rules, const KeepCheck& keep) {
@@ -41,6 +34,16 @@ bool kept(const std::vector<HeardCue>& cues, const DoubleListenRules& rules, con
 }
 
 }  // namespace
+
+bool loopingText(const std::string& text, double maxRatio) {
+  if (text.empty()) return false;
+  uLongf size = compressBound(static_cast<uLong>(text.size()));
+  std::vector<Bytef> out(size);
+  if (compress2(out.data(), &size, reinterpret_cast<const Bytef*>(text.data()), static_cast<uLong>(text.size()),
+                Z_DEFAULT_COMPRESSION) != Z_OK || size == 0)
+    return false;
+  return static_cast<double>(text.size()) / static_cast<double>(size) > maxRatio;
+}
 
 std::vector<ListenStretch> listenStretches(const std::vector<HeardCue>& first, const std::vector<HeardCue>& second) {
   struct Tagged {

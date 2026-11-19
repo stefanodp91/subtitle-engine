@@ -53,6 +53,14 @@ struct DoubleListenRules {
   double loopRatio = 2.4;                          // a text whose zlib compression ratio is above this is a loop
 };
 
+// BUG-307: at a piece's end whisper can pack words said later into a few tenths of
+// a second. Such a cue is not given out: the next piece starts at it and hears it
+// again in its place.
+struct RehearRules {
+  int denseCharsPerSecond = 60;                    // a cue denser than this was not heard at its place...
+  int denseMinChars = 15;                          // ...when it has at least this many characters
+};
+
 struct FormatRules {
   int lineChars = 42;
   int maxLines = 2;

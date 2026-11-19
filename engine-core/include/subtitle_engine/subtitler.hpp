@@ -24,6 +24,7 @@ struct SubtitlerConfig {
   JoinRules join;
   FormatRules format;
   DoubleListenRules second;
+  RehearRules rehear;                              // BUG-307
   std::chrono::milliseconds stall{20000};          // DEC-843
   std::chrono::milliseconds waitPoll{200};
   std::chrono::milliseconds readAhead{60000};      // how much audio is decoded ahead of the queue

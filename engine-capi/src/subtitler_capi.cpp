@@ -70,7 +70,9 @@ SubtitlerConfig configFrom(const json& c) {
                            {"duplicate_min_words", &cfg.cleanup.duplicateMinWords},
                            {"duplicate_look_back", &cfg.cleanup.duplicateLookBack},
                            {"prompt_min_words", &cfg.cleanup.promptMinWords},
-                           {"prompt_name_min_chars", &cfg.cleanup.promptNameMinChars}})
+                           {"prompt_name_min_chars", &cfg.cleanup.promptNameMinChars},
+                           {"dense_chars_per_s", &cfg.rehear.denseCharsPerSecond},
+                           {"dense_min_chars", &cfg.rehear.denseMinChars}})
     take(c, key, into);
   for (auto [key, into] : {std::pair{"prompt_share", &cfg.cleanup.promptShare}, {"double_margin", &cfg.second.margin},
                            {"double_fill_sure", &cfg.second.fillSure}, {"loop_ratio", &cfg.second.loopRatio}})

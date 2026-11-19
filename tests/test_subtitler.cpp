@@ -274,3 +274,36 @@ TEST_F(SubtitlerTest, CuesNeverOverlapAcrossPieces) {
     if (i > 0) EXPECT_GE(c.startMs - all[i - 1].endMs, 83) << c.text;
   }
 }
+
+// BUG-307: at a piece's end whisper packs words said later into 0.2 s; the next
+// piece starts there and hears them again in their place.
+TEST_F(SubtitlerTest, PackedCueAtPieceEndHeardAgain) {
+  for (const bool twice : {false, true}) {
+    FakeRecognizer r;
+    r.cues.push_back({1000, 3000, "A first line spoken at its pace."});
+    ScriptCue packed{7800, 8000, "They're gonna kill us! We're just gonna catch one!"};
+    packed.pieceToMs = 0;  // only the piece from the start packs them
+    r.cues.push_back(packed);
+    ScriptCue real{8200, 10600, "They are going to catch one of us today."};
+    real.pieceFromMs = 1;
+    r.cues.push_back(real);
+    SubtitlerSpec s = spec();
+    s.config.second.enabled = twice;
+    s.config.pieces.firstPiece = 8000ms;
+    auto sub = openSubtitler(r, source, s);
+    sub->setTranslator(&translator);
+    std::vector<Step> steps;
+    for (int i = 0; i < 3; ++i) steps.push_back(sub->step());
+    EXPECT_EQ(steps[0].readyUntilMs, 7800) << "double listen " << twice;
+    EXPECT_EQ(steps[1].fromMs, 7800);
+    bool heardAgain = false;
+    for (const auto& c : r.calls()) heardAgain = heardAgain || c.startMs == 7800;
+    EXPECT_TRUE(heardAgain);
+    bool real_ = false;
+    for (const auto& st : steps) {
+      EXPECT_FALSE(hasText(st, "gonna kill us"));
+      real_ = real_ || hasText(st, "catch one of us");  // the line breaks after "going to"
+    }
+    EXPECT_TRUE(real_);
+  }
+}

@@ -98,7 +98,8 @@ SE_API void se_listener_close(se_listener* listener);
  *   max_on_screen_ms, gap_ms, min_length_ms, slack_ms, cut_margin, break_slack, loop_min_repeats,
  *   loop_keep, loop_phrase_chars, duplicate_window_ms, duplicate_min_words, duplicate_look_back,
  *   repeat_pause_ms, prompt_share, prompt_min_words, prompt_name_min_chars, credit_patterns,
- *   sentence_pause_ms, double_listen, second_piece_ms, double_margin, double_fill_sure, loop_ratio.
+ *   sentence_pause_ms, double_listen, second_piece_ms, double_margin, double_fill_sure, loop_ratio,
+ *   dense_chars_per_s, dense_min_chars.
  * progress may be NULL. NULL with code invalid_argument, io_error, no_audio, unsupported_codec or
  * needs_end_of_file. */
 typedef struct se_subtitler se_subtitler;

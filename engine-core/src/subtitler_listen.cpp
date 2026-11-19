@@ -3,6 +3,7 @@
 
 #include <algorithm>
 
+#include "dense_cue.hpp"
 #include "listen_merge.hpp"
 #include "piece_cutter.hpp"
 #include "subtitler_impl.hpp"
@@ -102,6 +103,22 @@ bool Subtitler::Impl::hearInto(const Piece& piece, std::vector<HeardCue>* into, 
   return true;
 }
 
+// BUG-307: when whisper packed a cue of the piece just heard denser than speech,
+// the piece ends at that cue and the cursor goes back there: the cue and the ones
+// after it are heard again by the next piece.
+void Subtitler::Impl::rehearDense(Piece& piece, std::vector<HeardCue>* cues, size_t heardFrom, Cursor& cursor) {
+  const auto& cfg = spec.config;
+  const std::vector<HeardCue> heard(cues->begin() + static_cast<long>(heardFrom), cues->end());
+  const auto at = rehearFrom(heard, piece.atMs, cfg.rehear, cfg.pieces.minTail, cfg.second.loopRatio);
+  if (!at) return;
+  cues->erase(std::remove_if(cues->begin() + static_cast<long>(heardFrom), cues->end(),
+                             [&](const HeardCue& c) { return c.cue.startMs >= *at; }),
+              cues->end());
+  piece.endMs = *at;
+  cursor.atMs = *at;
+  cursor.lastProbeMs = -1;
+}
+
 // One piece of the first listen and, with the double listen, the second
 // listen's pieces up to its end; the stretches finished within the audio both
 // listens covered are final, the others wait for the next step.
@@ -125,10 +142,12 @@ Listened Subtitler::Impl::listen(const Stale& stale) {
     return out;
   }
   report(Stage::kListening, 0);
+  const size_t firstFrom = carryFirst.size();
   if (!hearInto(p1, &carryFirst, stale)) {
     out.kind = Piece::Kind::kCancelled;
     return out;
   }
+  rehearDense(p1, &carryFirst, firstFrom, first);
   out.readyUntilMs = p1.endMs;
   if (!twice) {
     out.cues = plain(carryFirst);
@@ -149,10 +168,12 @@ Listened Subtitler::Impl::listen(const Stale& stale) {
       }
       if (p2.kind == Piece::Kind::kEnd) break;
       report(Stage::kListening, 0.5);
+      const size_t secondFrom = carrySecond.size();
       if (!hearInto(p2, &carrySecond, stale)) {
         out.kind = Piece::Kind::kCancelled;
         return out;
       }
+      rehearDense(p2, &carrySecond, secondFrom, second);
     }
   }
   std::vector<HeardCue> merged, keepFirst, keepSecond;
