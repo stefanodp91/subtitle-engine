@@ -40,7 +40,8 @@ struct Heard {
 class SpeechRecognizer {
  public:
   virtual ~SpeechRecognizer() = default;
-  virtual std::vector<SpeechSpan> speech(const float* samples, size_t count) = 0;
+  // startMs: the film time of samples[0] (a recognizer that only looks at the audio ignores it).
+  virtual std::vector<SpeechSpan> speech(const float* samples, size_t count, int64_t startMs) = 0;
   virtual Heard hear(const float* samples, size_t count, int64_t startMs, const HearOptions& options) = 0;
 };
 

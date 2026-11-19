@@ -29,7 +29,7 @@ class Listener : public SpeechRecognizer {
   Listener(const Listener&) = delete;
   Listener& operator=(const Listener&) = delete;
 
-  std::vector<SpeechSpan> speech(const float* samples, size_t count) override;
+  std::vector<SpeechSpan> speech(const float* samples, size_t count, int64_t startMs) override;
   Heard hear(const float* samples, size_t count, int64_t startMs, const HearOptions& options) override;
 
  private:

@@ -34,6 +34,7 @@ struct PieceRules {
   std::chrono::milliseconds piece{20000}, cutMin{7000};          // DEC-840
   std::chrono::milliseconds firstPiece{8000}, firstCut{1500};    // DEC-841
   std::chrono::milliseconds firstPauseMin{150}, firstPauseOpen{300}, pauseMin{200}, minTail{500};
+  std::chrono::milliseconds firstProbeEvery{500};  // the first piece looks for its pause again after this much new audio
 };
 
 // BUG-289: a cue starts at its first word, by whisper's alignment heads.
@@ -41,6 +42,15 @@ struct TimingRules {
   std::chrono::milliseconds endPad{500};           // a cue moved whole ends this long after its last word...
   std::chrono::milliseconds movedMin{1000};        // ...and lasts at least this long
   std::chrono::milliseconds startBeforeEnd{200};   // a start never closer to the cue's end than this
+};
+
+// DEC-886: the audio heard twice, cut in different places, chosen stretch by stretch.
+struct DoubleListenRules {
+  bool enabled = true;
+  std::chrono::milliseconds secondPiece{14000};    // the second listen's pieces (the first's are PieceRules::piece)
+  double margin = 0.0;                             // the second listen wins a stretch when surer by more than this
+  double fillSure = 0.6;                           // a stretch only the second listen heard, taken from this confidence
+  double loopRatio = 2.4;                          // a text whose zlib compression ratio is above this is a loop
 };
 
 struct FormatRules {

@@ -8,21 +8,21 @@ Version `0.2.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Moz
 
 | Folder | What |
 |---|---|
-| `engine-core/` | C++17. `Translator` (one language pair, or two chained through English) on top of Mozilla's engine; `listTextTracks` / `extractTextTrack` for MKV files; `AudioReader`: a film's audio as 16 kHz mono samples with their film time, read through a `MediaSource`; `CueCleaner`, `joinSentences`, `CueFormatter`: heard cues cleaned, joined into sentences and shaped for the screen; `Listener`: whisper.cpp and the Silero voice detector, with `cutPoint` (where a piece of audio ends) and `alignCue` (a cue starts at its first word) |
+| `engine-core/` | C++17. `Translator` (one language pair, or two chained through English) on top of Mozilla's engine; `listTextTracks` / `extractTextTrack` for MKV files; `AudioReader`: a film's audio as 16 kHz mono samples with their film time, read through a `MediaSource`; `CueCleaner`, `joinSentences`, `CueFormatter`: heard cues cleaned, joined into sentences and shaped for the screen; `Listener`: whisper.cpp and the Silero voice detector, with `cutPoint` (where a piece of audio ends) and `alignCue` (a cue starts at its first word); `Subtitler`: the heard-to-translated queue, one piece per step, with the audio read ahead on a thread of its own, jumps, stalls of the download, the translator asked for when missing and the double listen (two listens cut in different places, chosen stretch by stretch by whisper's confidence) |
 | `engine-capi/` | The C interface, `subtitle_engine_c.h`, with JSON data; the `libsubtitle_engine` library |
 | `flutter_subtitle_engine/` | Dart package calling the C interface through `dart:ffi` from a dedicated isolate |
 | `tools/se_cli.cpp` | Command-line tool for measurements and checks |
 | `tests/` | GoogleTest tests, run on macOS without network |
 | `scripts/` | Dependencies, test translators, test videos, builds |
 | `patches/` | Fixes to the dependencies, applied by `fetch_deps.sh` (`patches/whisper/` to whisper.cpp) |
-| `fixtures/` | Test MKVs (SRT, ASS, WebVTT, and one with an image track before a text one) and `short_en.srt`; `audio_*` (a 440 Hz tone of 20 s with 5 s of silence, no voice: AC-3, E-AC-3, DTS, two tracks, no index, MP4 with its index at the end, ALAC, video only; and AC-3 turning from stereo to mono halfway); `fixtures/models/` (downloaded, ignored) |
+| `fixtures/` | Test MKVs (SRT, ASS, WebVTT, and one with an image track before a text one) and `short_en.srt`; `audio_*` (a 440 Hz tone of 20 s with 5 s of silence, no voice: AC-3, E-AC-3, DTS, two tracks, no index, MP4 with its index at the end, ALAC, video only; AC-3 turning from stereo to mono halfway, and two minutes of tone with no language tag for the queue); `fixtures/models/` (downloaded, ignored) |
 
 ## Setup
 
 ```bash
 scripts/fetch_deps.sh        # dependencies pinned in scripts/deps.lock, with the patches
 scripts/fetch_test_models.sh # Firefox en→it, it→en, es→en, zh-Hant→en into fixtures/models/
-scripts/make_fixtures.sh     # rebuilds the test videos (needs an ffmpeg with x264, AC-3, E-AC-3, DTS and ALAC encoders)
+scripts/make_fixtures.sh     # rebuilds the test videos (needs an ffmpeg with x264, AC-3, E-AC-3, DTS, ALAC and libopus encoders)
 scripts/build_ffmpeg.sh mac  # the audio-only FFmpeg into build/ffmpeg-mac (build_mac.sh runs it if missing)
 scripts/make_speech_fixtures.sh  # macOS only: test videos with a synthetic voice (say) into fixtures/speech/, not in git
 ```

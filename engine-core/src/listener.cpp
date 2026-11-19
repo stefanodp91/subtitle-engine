@@ -89,7 +89,7 @@ std::unique_ptr<Listener> Listener::open(const ListenerSpec& spec, std::string* 
 Listener::Listener(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 Listener::~Listener() = default;
 
-std::vector<SpeechSpan> Listener::speech(const float* samples, size_t count) {
+std::vector<SpeechSpan> Listener::speech(const float* samples, size_t count, int64_t) {
   std::vector<SpeechSpan> out;
   whisper_vad_segments* seg =
       whisper_vad_segments_from_samples(impl_->vad, whisper_vad_default_params(), samples, static_cast<int>(count));

@@ -52,5 +52,8 @@ ffmpeg -v error -y -f lavfi -i "sine=frequency=440:duration=10" -ac 2 -ar 48000 
 ffmpeg -v error -y -f lavfi -i "sine=frequency=660:duration=10" -ac 1 -ar 48000 -c:a ac3 -b:a 64k "$AC3B"
 cat "$AC3A" "$AC3B" > "$AC3A.joined"
 ffmpeg -v error -y -f ac3 -i "$AC3A.joined" -c:a copy "${A[@]}" "$F/audio_layout_change.mkv"
+# Two minutes of a plain tone with no language tag, small (Opus, 6 kbps), for
+# the queue's tests: their speech comes from a script, not from the audio.
+ffmpeg -v error -y -f lavfi -i "sine=frequency=440:duration=120" -ac 1 -ar 48000 -c:a libopus -b:a 6k -vbr off "$F/audio_long.mkv"
 rm -rf "$(dirname "$BASE")"
 echo "fixtures ready"

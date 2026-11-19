@@ -7,7 +7,9 @@ set_target_properties(zstd_decompress PROPERTIES C_VISIBILITY_PRESET hidden)
 
 add_library(subtitle_engine_core STATIC src/translator.cpp src/ebml.cpp src/mkv_text_tracks.cpp src/zstd_file.cpp
   src/audio_reader.cpp src/avio_bridge.cpp src/cue_text.cpp src/cue_cleaner.cpp src/sentence_joiner.cpp src/cue_formatter.cpp
-  src/piece_cutter.cpp src/cue_timing.cpp src/listener.cpp)
+  src/piece_cutter.cpp src/cue_timing.cpp src/listener.cpp
+  src/ready_ranges.cpp src/listen_merge.cpp src/audio_feed.cpp src/translation_stage.cpp src/subtitler.cpp
+  src/subtitler_listen.cpp)
 target_include_directories(subtitle_engine_core
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${SE_THIRD_PARTY}/mozilla-translations/inference/src
