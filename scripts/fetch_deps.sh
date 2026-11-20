@@ -62,4 +62,24 @@ if [[ ! -d "$TP/zstd" ]]; then
   mkdir -p "$TP/zstd"
   tar -xzf "$TP/_dl/zstd-1.5.6.tar.gz" -C "$TP/zstd" --strip-components 1
 fi
+# FFmpeg sources (audio only, LGPL), built by scripts/build_ffmpeg.sh.
+fetch_file ffmpeg "$TP/_dl/ffmpeg-8.1.3.tar.xz"
+if [[ ! -d "$TP/ffmpeg" ]]; then
+  mkdir -p "$TP/ffmpeg"
+  tar -xJf "$TP/_dl/ffmpeg-8.1.3.tar.xz" -C "$TP/ffmpeg" --strip-components 1
+fi
+# whisper.cpp sources, with the fixes of patches/whisper/ (stops if one no longer applies).
+fetch_file whisper.cpp "$TP/_dl/whisper.cpp-1.9.5.tar.gz"
+WH="$TP/whisper.cpp"
+if [[ ! -d "$WH" ]]; then
+  mkdir -p "$WH"
+  tar -xzf "$TP/_dl/whisper.cpp-1.9.5.tar.gz" -C "$WH" --strip-components 1
+fi
+for patch in "$ROOT"/patches/whisper/*.patch; do
+  marker="$WH/.applied-$(basename "$patch")"
+  [[ -f "$marker" ]] && continue
+  patch -s -p1 --dry-run -d "$WH" < "$patch" || { echo "$(basename "$patch") does not apply to whisper.cpp" >&2; exit 1; }
+  patch -s -p1 -d "$WH" < "$patch"
+  touch "$marker"
+done
 echo "dependencies ready in $TP"

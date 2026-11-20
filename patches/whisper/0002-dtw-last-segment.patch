@@ -1,0 +1,34 @@
+--- a/src/whisper.cpp
++++ b/src/whisper.cpp
+@@ -9300,19 +9300,28 @@
+             int64_t timestamp = (time_index * 2) + seek; // Each index on DTW result = 20mS audio
+             last_v = v;
+ 
+-            // Skip non-text tokens
+-            while (!(tok_i->id < whisper_token_eot(ctx))) {
++            // Skip non-text tokens (the segments can end first: then stop,
++            // never read the segment after the last one)
++            while (seg_i != state->result_all.end() && !(tok_i->id < whisper_token_eot(ctx))) {
+                 ++tok_i;
+                 if (tok_i == seg_i->tokens.end()) {
+                     ++seg_i;
+-                    tok_i = seg_i->tokens.begin();
++                    if (seg_i != state->result_all.end()) {
++                        tok_i = seg_i->tokens.begin();
++                    }
+                 }
+             }
++            if (seg_i == state->result_all.end()) {
++                break;
++            }
+ 
+             tok_i->t_dtw = timestamp;
+             ++tok_i;
+             if (tok_i == seg_i->tokens.end()) {
+                 ++seg_i;
++                if (seg_i == state->result_all.end()) {
++                    break;
++                }
+                 tok_i = seg_i->tokens.begin();
+             }
+         }

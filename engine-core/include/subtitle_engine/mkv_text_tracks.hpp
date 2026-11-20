@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "subtitle_engine/cue.hpp"
+
 namespace subtitle_engine {
 
 struct TextTrack {
@@ -18,12 +20,6 @@ struct TextTrack {
   bool isForced = false;
   bool hearingImpaired = false;
   bool isText = true;  // false for image subtitles (VobSub, PGS…), listed only by listSubtitleTracks
-};
-
-struct Cue {
-  int64_t startMs = 0;
-  int64_t endMs = 0;
-  std::string text;  // '\n' between rows; ASS override tags {\…} kept
 };
 
 struct Extraction {

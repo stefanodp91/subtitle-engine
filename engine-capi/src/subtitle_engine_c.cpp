@@ -6,49 +6,18 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "capi_common.hpp"
 #include "subtitle_engine/mkv_text_tracks.hpp"
 #include "subtitle_engine/translator.hpp"
 #include "subtitle_engine/zstd_file.hpp"
 
 using nlohmann::json;
 
-struct se_translator {
-  std::unique_ptr<subtitle_engine::Translator> translator;
-};
-
-namespace {
-
-// Subtitle text from files may not be valid UTF-8: replace bad bytes instead of throwing.
-std::string toJson(const json& value) { return value.dump(-1, ' ', false, json::error_handler_t::replace); }
-
-char* duplicate(const std::string& text) {
-  char* out = static_cast<char*>(std::malloc(text.size() + 1));
-  std::memcpy(out, text.c_str(), text.size() + 1);
-  return out;
-}
-
-// Error messages never carry subtitle text or file paths.
-void setError(char** errorJson, const std::string& code, const std::string& message) {
-  if (errorJson) *errorJson = duplicate(toJson(json{{"code", code}, {"message", message}}));
-}
-
-const char* messageFor(const std::string& code) {
-  if (code == "invalid_argument") return "invalid arguments";
-  if (code == "model_load_failed") return "could not load the translation model files";
-  if (code == "io_error") return "could not open the file";
-  if (code == "not_matroska") return "the file is not a Matroska file";
-  if (code == "track_not_found") return "no track with that number";
-  if (code == "not_text_track") return "the track is not a text subtitle track";
-  if (code == "corrupt_data") return "the compressed data is damaged or incomplete";
-  if (code == "too_large") return "the decompressed data is larger than allowed";
-  return "operation failed";
-}
-
-}  // namespace
+using namespace subtitle_engine::capi;
 
 extern "C" {
 
-SE_API const char* se_version(void) { return "0.2.0"; }
+SE_API const char* se_version(void) { return "0.3.0"; }
 
 SE_API void se_free(char* p) { std::free(p); }
 
