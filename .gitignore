@@ -5,3 +5,5 @@ fixtures/models/
 *.log
 .dart_tool/
 flutter_subtitle_engine/pubspec.lock
+fixtures/whisper
+fixtures/speech/

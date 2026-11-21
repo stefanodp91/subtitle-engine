@@ -1,12 +1,19 @@
-/// The three files of one translation direction, as Firefox ships them.
+/// The files of one translation direction, as Firefox ships them; models
+/// with separate vocabularies give [vocab] (source) and [targetVocab].
 final class TranslatorModelFiles {
-  const TranslatorModelFiles({required this.model, required this.vocab, required this.lex});
+  const TranslatorModelFiles({required this.model, required this.vocab, required this.lex, this.targetVocab});
 
   final String model;
   final String vocab;
   final String lex;
+  final String? targetVocab;
 
-  Map<String, String> toJson() => {'model': model, 'vocab': vocab, 'lex': lex};
+  Map<String, String> toJson() => {
+        'model': model,
+        'vocab': vocab,
+        'lex': lex,
+        if (targetVocab != null) 'target_vocab': targetVocab!,
+      };
 }
 
 /// An open translator, owned by the engine's isolate.
@@ -17,7 +24,7 @@ final class TranslatorHandle {
 }
 
 /// A text subtitle track inside a Matroska file.
-final class MkvTextTrack {
+class MkvTextTrack {
   const MkvTextTrack({
     required this.number,
     required this.codec,
@@ -52,6 +59,39 @@ final class MkvTextTrack {
   final bool hearingImpaired;
 }
 
+/// A subtitle track of any kind, in file order (the order players number
+/// their subtitle tracks in); [isText] is false for image subtitles.
+final class MkvSubtitleTrack extends MkvTextTrack {
+  const MkvSubtitleTrack({
+    required super.number,
+    required super.codec,
+    required super.language,
+    required super.languageBcp47,
+    required super.name,
+    required super.isDefault,
+    required super.isForced,
+    required super.hearingImpaired,
+    required this.isText,
+  });
+
+  factory MkvSubtitleTrack.fromJson(Map<String, dynamic> json) {
+    final t = MkvTextTrack.fromJson(json);
+    return MkvSubtitleTrack(
+      number: t.number,
+      codec: t.codec,
+      language: t.language,
+      languageBcp47: t.languageBcp47,
+      name: t.name,
+      isDefault: t.isDefault,
+      isForced: t.isForced,
+      hearingImpaired: t.hearingImpaired,
+      isText: json['text'] as bool,
+    );
+  }
+
+  final bool isText;
+}
+
 /// One subtitle cue; rows separated by `\n`, ASS override tags kept.
 final class SubtitleCue {
   const SubtitleCue({required this.start, required this.end, required this.text});
@@ -77,7 +117,7 @@ final class MkvExtraction {
 
 /// An error from the engine: [code] is one of the C interface's codes
 /// (invalid_argument, model_load_failed, translation_failed, io_error,
-/// not_matroska, track_not_found, not_text_track).
+/// not_matroska, track_not_found, not_text_track, corrupt_data, too_large).
 final class SubtitleEngineException implements Exception {
   const SubtitleEngineException(this.code, this.message);
 

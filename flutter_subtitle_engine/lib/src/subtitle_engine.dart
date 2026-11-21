@@ -57,6 +57,11 @@ class SubtitleEngine {
     return [for (final t in jsonDecode(out) as List) MkvTextTrack.fromJson(t as Map<String, dynamic>)];
   }
 
+  Future<List<MkvSubtitleTrack>> mkvSubtitleTracks(String path) async {
+    final out = await _call('subtitle_tracks', [path]) as String;
+    return [for (final t in jsonDecode(out) as List) MkvSubtitleTrack.fromJson(t as Map<String, dynamic>)];
+  }
+
   Future<MkvExtraction> extractMkvTrack(String path, int trackNumber) async {
     final json = jsonDecode(await _call('extract', [path, trackNumber]) as String) as Map<String, dynamic>;
     return MkvExtraction(
@@ -64,6 +69,11 @@ class SubtitleEngine {
       complete: json['complete'] as bool,
     );
   }
+
+  /// Decompresses the .zst file [inPath] into [outPath]; fails with code
+  /// io_error, corrupt_data or too_large (over [maxBytes]), leaving no output.
+  Future<void> decompressZstd(String inPath, String outPath, {required int maxBytes}) =>
+      _call('zstd', [inPath, outPath, maxBytes]);
 
   /// Closes the translators still open and stops the isolate.
   Future<void> dispose() async {
@@ -166,7 +176,12 @@ void _workerMain((SendPort, String?) init) {
             return null;
           }(),
         'tracks' => withString(m[2] as String, (path) => takeString((e) => bindings.se_mkv_text_tracks(path, e))),
+        'subtitle_tracks' => withString(m[2] as String, (path) => takeString((e) => bindings.se_mkv_subtitle_tracks(path, e))),
         'extract' => withString(m[2] as String, (path) => takeString((e) => bindings.se_mkv_extract(path, m[3] as int, e))),
+        'zstd' => withString(m[2] as String, (inPath) => withString(m[3] as String, (outPath) {
+              native((e) => bindings.se_zstd_decompress_file(inPath, outPath, m[4] as int, e), (int ok) => ok == 0);
+              return null;
+            })),
         'dispose' => () {
             translators.values.forEach(bindings.se_translator_close);
             translators.clear();

@@ -93,4 +93,39 @@ void main() {
     expect(results[1].single, contains('notte'));
     await engine.closeTranslator(t);
   });
+
+  test('decompresses a zstd file and rejects one that is too large', () async {
+    final dir = Directory.systemTemp.createTempSync('se_zstd');
+    final source = File('${dir.path}/text.txt')..writeAsStringSync('A subtitle line.\n' * 10000);
+    final packed = await Process.run('zstd', ['-q', '-f', source.path, '-o', '${dir.path}/text.zst']);
+    expect(packed.exitCode, 0, reason: 'needs the zstd command');
+    await engine.decompressZstd('${dir.path}/text.zst', '${dir.path}/out.txt', maxBytes: source.lengthSync());
+    expect(File('${dir.path}/out.txt').readAsStringSync(), source.readAsStringSync());
+    await expectLater(
+      engine.decompressZstd('${dir.path}/text.zst', '${dir.path}/small.txt', maxBytes: 100),
+      throwsA(isA<SubtitleEngineException>().having((e) => e.code, 'code', 'too_large')),
+    );
+    expect(File('${dir.path}/small.txt').existsSync(), isFalse);
+    dir.deleteSync(recursive: true);
+  });
+
+  test('translates with a model that has separate vocabularies', () async {
+    final dir = '$_root/fixtures/models/zh-Hanten';
+    final t = await engine.openTranslator([
+      TranslatorModelFiles(
+        model: '$dir/model.zhen.intgemm.alphas.bin',
+        vocab: '$dir/srcvocab.zhen.spm',
+        targetVocab: '$dir/trgvocab.zhen.spm',
+        lex: '$dir/lex.50.50.zhen.s2t.bin',
+      ),
+    ]);
+    final out = await engine.translate(t, ['你好，世界。']);
+    expect(out.single.toLowerCase(), contains('hello'));
+    await engine.closeTranslator(t);
+  });
+
+  test('lists every subtitle track with isText', () async {
+    final tracks = await engine.mkvSubtitleTracks('$_root/fixtures/subs_mixed.mkv');
+    expect(tracks.map((t) => (t.codec, t.isText)), [('S_VOBSUB', false), ('S_TEXT/UTF8', true)]);
+  });
 }

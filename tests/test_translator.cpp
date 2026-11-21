@@ -55,9 +55,43 @@ TEST(Translator, KeepsEmptyAndTagOnlyLinesInPlace) {
   EXPECT_EQ(out[1], "");
 }
 
+TEST(Translator, DoesNotDoubleShortSentences) {
+  auto t = openPairs({"enit"});
+  auto out = t->translate({"What?", "Okay. Let's go.", "Thanks.", "No."});
+  ASSERT_EQ(out.size(), 4u);
+  EXPECT_EQ(out[0], "Cosa?");
+  EXPECT_EQ(out[1], "Ok. Andiamo.");
+  EXPECT_EQ(out[2], "Grazie.");
+  EXPECT_EQ(out[3], "No.");
+}
+
+TEST(Translator, KeepsRepetitionsOfTheSource) {
+  auto t = openPairs({"enit"});
+  EXPECT_EQ(t->translate({"Help! Help!"})[0], "Aiuto! Aiuto!");
+}
+
 TEST(Translator, PivotsSpanishToItalian) {
   auto t = openPairs({"esen", "enit"});
   auto out = t->translate({"¿Dónde está la estación de tren?"});
   ASSERT_EQ(out.size(), 1u);
   EXPECT_NE(out[0].find("stazione"), std::string::npos) << out[0];
+}
+
+TEST(Translator, TranslatesWithSeparateVocabularies) {
+  const std::string dir = modelDir("zh-Hanten");
+  TranslatorSpec spec;
+  subtitle_engine::ModelFiles files;
+  files.model = dir + "/model.zhen.intgemm.alphas.bin";
+  files.vocab = dir + "/srcvocab.zhen.spm";
+  files.targetVocab = dir + "/trgvocab.zhen.spm";
+  files.lex = dir + "/lex.50.50.zhen.s2t.bin";
+  spec.models.push_back(files);
+  std::string error;
+  auto t = Translator::open(spec, &error);
+  ASSERT_TRUE(t) << error;
+  auto out = t->translate({"你好，世界。"});
+  ASSERT_EQ(out.size(), 1u);
+  std::string lower = out[0];
+  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  EXPECT_NE(lower.find("hello"), std::string::npos) << out[0];
 }

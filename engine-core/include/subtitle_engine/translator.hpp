@@ -6,13 +6,16 @@
 #include <string>
 #include <vector>
 
+#include "subtitle_engine/text_translator.hpp"
+
 namespace subtitle_engine {
 
 /// The three files of one translation direction, as Firefox ships them.
 struct ModelFiles {
   std::string model;
-  std::string vocab;
+  std::string vocab;        // the source vocabulary, or the only one
   std::string lex;
+  std::string targetVocab;  // only for models with separate vocabularies
 };
 
 /// One direction, or two chained through English (the first one into English).
@@ -21,7 +24,7 @@ struct TranslatorSpec {
   size_t workspaceMb = 128;
 };
 
-class Translator {
+class Translator : public TextTranslator {
  public:
   /// Loads the models; on failure returns null and sets errorCode to
   /// "invalid_argument" or "model_load_failed".
@@ -29,9 +32,9 @@ class Translator {
 
   /// Translates each line, keeping count and order. Lines may carry <i>…</i>
   /// and '\n'; lines without visible text come back unchanged.
-  std::vector<std::string> translate(const std::vector<std::string>& lines);
+  std::vector<std::string> translate(const std::vector<std::string>& lines) override;
 
-  ~Translator();
+  ~Translator() override;
 
  private:
   struct Impl;
