@@ -3,6 +3,7 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <string_view>
 #include <utility>
 
 #include "common/logging.h"
@@ -11,6 +12,8 @@
 #include "translator/response_options.h"
 #include "translator/service.h"
 #include "translator/translation_model.h"
+
+#include "sentence_repair.hpp"
 
 namespace subtitle_engine {
 
@@ -52,6 +55,21 @@ bool hasVisibleText(const std::string& line) {
   static const std::regex tags("<[^>]*>");
   const std::string text = std::regex_replace(line, tags, "");
   return text.find_first_not_of(" \t\r\n") != std::string::npos;
+}
+
+// The translation with each sentence repaired against its source (the en->it
+// model doubles short sentences, see sentence_repair.hpp).
+std::string repaired(const bergamot::Response& response) {
+  const auto& source = response.source;
+  const auto& target = response.target;
+  if (source.numSentences() != target.numSentences()) return target.text;
+  const auto view = [](auto piece) { return std::string_view(piece.data(), piece.size()); };
+  std::string text(view(target.gap(0)));
+  for (size_t i = 0; i < target.numSentences(); ++i) {
+    text += repairSentence(view(source.sentence(i)), view(target.sentence(i)));
+    text += view(target.gap(i + 1));
+  }
+  return text;
 }
 
 std::string replaceAll(std::string text, const std::string& from, const std::string& to) {
@@ -110,7 +128,7 @@ std::vector<std::string> Translator::translate(const std::vector<std::string>& l
                        ? impl_->service.pivotMultiple(impl_->models[0], impl_->models[1], std::move(sources), perLine)
                        : impl_->service.translateMultiple(impl_->models[0], std::move(sources), perLine);
   for (size_t k = 0; k < responses.size(); ++k) {
-    std::string text = responses[k].target.text;
+    std::string text = repaired(responses[k]);
     for (const char* br : {"<br />", "<br/>", "<br>"}) text = replaceAll(text, br, "\n");
     out[positions[k]] = text;
   }

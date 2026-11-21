@@ -3,7 +3,7 @@
 target_compile_definitions(gtest PUBLIC GTEST_HAS_POSIX_RE=0)
 
 add_executable(se_tests test_version.cpp test_translator.cpp test_translator_capi.cpp test_mkv.cpp test_mkv_capi.cpp test_zstd.cpp
-  test_audio_reader.cpp test_cue_cleaner.cpp test_sentence_joiner.cpp test_cue_formatter.cpp
+  test_audio_reader.cpp test_cue_cleaner.cpp test_sentence_joiner.cpp test_sentence_repair.cpp test_cue_formatter.cpp
   test_piece_cutter.cpp test_cue_timing.cpp test_listener.cpp
   test_ready_ranges.cpp test_listen_merge.cpp test_dense_cue.cpp test_subtitler.cpp test_subtitler_integration.cpp
   test_subtitle_store.cpp test_subtitler_capi.cpp)
