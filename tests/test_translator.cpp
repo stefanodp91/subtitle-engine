@@ -55,6 +55,21 @@ TEST(Translator, KeepsEmptyAndTagOnlyLinesInPlace) {
   EXPECT_EQ(out[1], "");
 }
 
+TEST(Translator, DoesNotDoubleShortSentences) {
+  auto t = openPairs({"enit"});
+  auto out = t->translate({"What?", "Okay. Let's go.", "Thanks.", "No."});
+  ASSERT_EQ(out.size(), 4u);
+  EXPECT_EQ(out[0], "Cosa?");
+  EXPECT_EQ(out[1], "Ok. Andiamo.");
+  EXPECT_EQ(out[2], "Grazie.");
+  EXPECT_EQ(out[3], "No.");
+}
+
+TEST(Translator, KeepsRepetitionsOfTheSource) {
+  auto t = openPairs({"enit"});
+  EXPECT_EQ(t->translate({"Help! Help!"})[0], "Aiuto! Aiuto!");
+}
+
 TEST(Translator, PivotsSpanishToItalian) {
   auto t = openPairs({"esen", "enit"});
   auto out = t->translate({"¿Dónde está la estación de tren?"});
