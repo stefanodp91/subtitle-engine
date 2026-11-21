@@ -437,6 +437,275 @@ class SubtitleEngineBindings {
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
         )
       >();
+
+  /// catalog_json: the text of the catalog (on Android an asset, not a file).
+  /// NULL with code invalid_argument or unsupported_format.
+  ffi.Pointer<se_catalog> se_catalog_open(
+    ffi.Pointer<ffi.Char> catalog_json,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_catalog_open(catalog_json, error_json);
+  }
+
+  late final _se_catalog_openPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<se_catalog> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_catalog_open');
+  late final _se_catalog_open = _se_catalog_openPtr
+      .asFunction<
+        ffi.Pointer<se_catalog> Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  void se_catalog_close(ffi.Pointer<se_catalog> catalog) {
+    return _se_catalog_close(catalog);
+  }
+
+  late final _se_catalog_closePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<se_catalog>)>>(
+        'se_catalog_close',
+      );
+  late final _se_catalog_close = _se_catalog_closePtr
+      .asFunction<void Function(ffi.Pointer<se_catalog>)>();
+
+  /// [{"id","kind","source_language","target_language","version","download_bytes","installed_bytes"}];
+  /// kind: translator, speech or voice_detector; the languages only for translators.
+  ffi.Pointer<ffi.Char> se_catalog_models(
+    ffi.Pointer<se_catalog> catalog,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_catalog_models(catalog, error_json);
+  }
+
+  late final _se_catalog_modelsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<se_catalog>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_catalog_models');
+  late final _se_catalog_models = _se_catalog_modelsPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<se_catalog>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// The translators from source to target: ["esen","enit"], or [] for the same language.
+  /// NULL with code no_chain.
+  ffi.Pointer<ffi.Char> se_catalog_chain(
+    ffi.Pointer<se_catalog> catalog,
+    ffi.Pointer<ffi.Char> source,
+    ffi.Pointer<ffi.Char> target,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_catalog_chain(catalog, source, target, error_json);
+  }
+
+  late final _se_catalog_chainPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<se_catalog>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_catalog_chain');
+  late final _se_catalog_chain = _se_catalog_chainPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<se_catalog>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// ids_json: ["enit",…], or NULL for every model of the catalog; mode: "quick" (sizes) or
+  /// "full" (also every SHA-256). [{"id":"enit","status":"installed"|"missing"|"incomplete"|
+  /// "outdated"|"corrupt"}]. NULL with code invalid_argument or unknown_model.
+  ffi.Pointer<ffi.Char> se_models_check(
+    ffi.Pointer<se_catalog> catalog,
+    ffi.Pointer<ffi.Char> models_dir,
+    ffi.Pointer<ffi.Char> ids_json,
+    ffi.Pointer<ffi.Char> mode,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_models_check(catalog, models_dir, ids_json, mode, error_json);
+  }
+
+  late final _se_models_checkPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<se_catalog>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_models_check');
+  late final _se_models_check = _se_models_checkPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<se_catalog>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// [{"url","path","size"}]: where to save each file of the model before se_model_install.
+  /// NULL with code unknown_model.
+  ffi.Pointer<ffi.Char> se_model_downloads(
+    ffi.Pointer<se_catalog> catalog,
+    ffi.Pointer<ffi.Char> models_dir,
+    ffi.Pointer<ffi.Char> id,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_model_downloads(catalog, models_dir, id, error_json);
+  }
+
+  late final _se_model_downloadsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<se_catalog>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_model_downloads');
+  late final _se_model_downloads = _se_model_downloadsPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<se_catalog>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// Checks, decompresses and installs the downloaded files. Returns 1, or 0 with code
+  /// unknown_model, download_missing, download_corrupt, corrupt_data, installed_corrupt,
+  /// too_large, io_error (the model's folder is then removed) or busy (another install of the
+  /// same model is running; nothing touched).
+  int se_model_install(
+    ffi.Pointer<se_catalog> catalog,
+    ffi.Pointer<ffi.Char> models_dir,
+    ffi.Pointer<ffi.Char> id,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_model_install(catalog, models_dir, id, error_json);
+  }
+
+  late final _se_model_installPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<se_catalog>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_model_install');
+  late final _se_model_install = _se_model_installPtr
+      .asFunction<
+        int Function(
+          ffi.Pointer<se_catalog>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// The spec of se_translator_open for source to target. NULL with code no_chain or not_installed.
+  ffi.Pointer<ffi.Char> se_catalog_translator_spec(
+    ffi.Pointer<se_catalog> catalog,
+    ffi.Pointer<ffi.Char> models_dir,
+    ffi.Pointer<ffi.Char> source,
+    ffi.Pointer<ffi.Char> target,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_catalog_translator_spec(
+      catalog,
+      models_dir,
+      source,
+      target,
+      error_json,
+    );
+  }
+
+  late final _se_catalog_translator_specPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<se_catalog>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_catalog_translator_spec');
+  late final _se_catalog_translator_spec = _se_catalog_translator_specPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<se_catalog>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  /// The files of an installed model, role to path: {"model":"…"} (a translator adds lex and
+  /// vocab or srcvocab and trgvocab). NULL with code unknown_model or not_installed.
+  ffi.Pointer<ffi.Char> se_model_paths(
+    ffi.Pointer<se_catalog> catalog,
+    ffi.Pointer<ffi.Char> models_dir,
+    ffi.Pointer<ffi.Char> id,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> error_json,
+  ) {
+    return _se_model_paths(catalog, models_dir, id, error_json);
+  }
+
+  late final _se_model_pathsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<se_catalog>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('se_model_paths');
+  late final _se_model_paths = _se_model_pathsPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<se_catalog>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
 }
 
 final class se_translator extends ffi.Opaque {}
@@ -479,6 +748,8 @@ typedef se_progress_fnFunction =
     );
 typedef Dartse_progress_fnFunction =
     void Function(ffi.Pointer<ffi.Void> opaque, int stage, double fraction);
+
+final class se_catalog extends ffi.Opaque {}
 
 const int SE_STAGE_AUDIO = 0;
 

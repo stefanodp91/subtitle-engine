@@ -6,12 +6,13 @@ add_executable(se_tests test_version.cpp test_translator.cpp test_translator_cap
   test_audio_reader.cpp test_cue_cleaner.cpp test_sentence_joiner.cpp test_sentence_repair.cpp test_cue_formatter.cpp
   test_piece_cutter.cpp test_cue_timing.cpp test_listener.cpp
   test_ready_ranges.cpp test_listen_merge.cpp test_dense_cue.cpp test_subtitler.cpp test_subtitler_integration.cpp
-  test_subtitle_store.cpp test_subtitler_capi.cpp)
+  test_subtitle_store.cpp test_subtitler_capi.cpp test_sha256_file.cpp test_model_catalog.cpp test_model_store.cpp test_model_store_spec.cpp test_catalog_capi.cpp)
 target_include_directories(se_tests PRIVATE ${SE_THIRD_PARTY}/nlohmann/include
   ${CMAKE_SOURCE_DIR}/engine-core/src
   ${SE_THIRD_PARTY}/mozilla-translations/inference/marian-fork/src/3rd_party/zlib)
 target_link_libraries(se_tests PRIVATE subtitle_engine subtitle_engine_core zstd_compress_for_tests GTest::gtest_main)
-target_compile_definitions(se_tests PRIVATE SE_FIXTURES="${CMAKE_SOURCE_DIR}/fixtures" SE_TMP="${CMAKE_CURRENT_BINARY_DIR}")
+target_compile_definitions(se_tests PRIVATE SE_FIXTURES="${CMAKE_SOURCE_DIR}/fixtures" SE_TMP="${CMAKE_CURRENT_BINARY_DIR}"
+  SE_CATALOG="${CMAKE_SOURCE_DIR}/catalog")
 add_test(NAME se_tests COMMAND se_tests)
 
 # zstd compression only to build test inputs; the engine ships decompression only.

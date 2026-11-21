@@ -43,6 +43,14 @@ inline const char* messageFor(const std::string& code) {
   if (code == "store_failed") return "could not save the subtitles";
   if (code == "not_found") return "nothing saved yet";
   if (code == "other_media") return "the saved subtitles belong to another version or language";
+  if (code == "unsupported_format") return "the catalog format is not supported";
+  if (code == "no_chain") return "no translators between these languages";
+  if (code == "unknown_model") return "the catalog has no model with that id";
+  if (code == "not_installed") return "the model is not installed";
+  if (code == "download_missing") return "a downloaded file is missing";
+  if (code == "download_corrupt") return "a downloaded file does not match its hash";
+  if (code == "installed_corrupt") return "an installed file does not match its hash";
+  if (code == "busy") return "the model is being installed";
   return "operation failed";
 }
 
