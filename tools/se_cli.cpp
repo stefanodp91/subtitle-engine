@@ -3,6 +3,7 @@
 //   se_cli tracks <file.mkv>
 //   se_cli extract <file.mkv> <track number>
 //   se_cli listen --listener <json> --spec <json> --input <video> [options] (listen_command.cpp)
+//   se_cli models --catalog <models.json> --dir <dir> <command> (models_command.cpp)
 // cues.txt: one cue per line, "<br>" where the cue breaks into rows.
 #include <sys/resource.h>
 
@@ -16,6 +17,7 @@
 #include <vector>
 
 #include "listen_command.hpp"
+#include "models_command.hpp"
 #include "subtitle_engine_c.h"
 
 using nlohmann::json;
@@ -117,12 +119,14 @@ int main(int argc, char** argv) {
   char* error = nullptr;
   if (command == "translate") return translate(argc, argv);
   if (command == "listen") return listenCommand(argc, argv);
+  if (command == "models") return modelsCommand(argc, argv);
   if (command == "tracks" && argc == 3) return printResult(se_mkv_text_tracks(argv[2], &error), error);
   if (command == "extract" && argc == 4) {
     return printResult(se_mkv_extract(argv[2], std::strtoull(argv[3], nullptr, 10), &error), error);
   }
   std::cerr << "usage: se_cli translate --spec <json> [--mode batch|lines] | tracks <mkv> | extract <mkv> <n>\n"
                "       se_cli listen --listener <json> --spec <json> --input <video> [--translator <json>] [--from-ms N]\n"
-               "                     [--seconds S] [--bytes-per-sec B] [--srt <out.srt>] [--stats <out.jsonl>]\n";
+               "                     [--seconds S] [--bytes-per-sec B] [--srt <out.srt>] [--stats <out.jsonl>]\n"
+               "       se_cli models --catalog <models.json> --dir <dir> list|chain|check|downloads|install|spec ...\n";
   return 2;
 }

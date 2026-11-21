@@ -2,4 +2,4 @@
 
 #include "subtitle_engine_c.h"
 
-TEST(Version, ReportsSemver) { EXPECT_STREQ(se_version(), "0.3.0"); }
+TEST(Version, ReportsSemver) { EXPECT_STREQ(se_version(), "0.4.0"); }

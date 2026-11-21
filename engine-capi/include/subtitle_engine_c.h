@@ -125,6 +125,50 @@ SE_API void se_subtitler_close(se_subtitler* subtitler);
  * "cues":[{"start_ms","end_ms","text"}]}, or NULL with code not_found, corrupt_data or other_media. */
 SE_API char* se_subtitles_load(const char* path, const char* media_id, const char* target_language, char** error_json);
 
+/* ---- The model catalog --------------------------------------------------- */
+
+/* The models the engine works with (catalog/models.json) and their files on disk:
+ * <models_dir>/<id>/ with installed.json written last. The engine never downloads:
+ * the caller saves each file where se_model_downloads says, then calls se_model_install. */
+typedef struct se_catalog se_catalog;
+
+/* catalog_json: the text of the catalog (on Android an asset, not a file).
+ * NULL with code invalid_argument or unsupported_format. */
+SE_API se_catalog* se_catalog_open(const char* catalog_json, char** error_json);
+SE_API void se_catalog_close(se_catalog* catalog);
+
+/* [{"id","kind","source_language","target_language","version","download_bytes","installed_bytes"}];
+ * kind: translator, speech or voice_detector; the languages only for translators. */
+SE_API char* se_catalog_models(se_catalog* catalog, char** error_json);
+
+/* The translators from source to target: ["esen","enit"], or [] for the same language.
+ * NULL with code no_chain. */
+SE_API char* se_catalog_chain(se_catalog* catalog, const char* source, const char* target, char** error_json);
+
+/* ids_json: ["enit",…], or NULL for every model of the catalog; mode: "quick" (sizes) or
+ * "full" (also every SHA-256). [{"id":"enit","status":"installed"|"missing"|"incomplete"|
+ * "outdated"|"corrupt"}]. NULL with code invalid_argument or unknown_model. */
+SE_API char* se_models_check(se_catalog* catalog, const char* models_dir, const char* ids_json, const char* mode,
+                             char** error_json);
+
+/* [{"url","path","size"}]: where to save each file of the model before se_model_install.
+ * NULL with code unknown_model. */
+SE_API char* se_model_downloads(se_catalog* catalog, const char* models_dir, const char* id, char** error_json);
+
+/* Checks, decompresses and installs the downloaded files. Returns 1, or 0 with code
+ * unknown_model, download_missing, download_corrupt, corrupt_data, installed_corrupt,
+ * too_large, io_error (the model's folder is then removed) or busy (another install of the
+ * same model is running; nothing touched). */
+SE_API int se_model_install(se_catalog* catalog, const char* models_dir, const char* id, char** error_json);
+
+/* The spec of se_translator_open for source to target. NULL with code no_chain or not_installed. */
+SE_API char* se_catalog_translator_spec(se_catalog* catalog, const char* models_dir, const char* source,
+                                        const char* target, char** error_json);
+
+/* The files of an installed model, role to path: {"model":"…"} (a translator adds lex and
+ * vocab or srcvocab and trgvocab). NULL with code unknown_model or not_installed. */
+SE_API char* se_model_paths(se_catalog* catalog, const char* models_dir, const char* id, char** error_json);
+
 #ifdef __cplusplus
 }
 #endif
