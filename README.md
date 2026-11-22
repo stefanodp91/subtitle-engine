@@ -2,7 +2,7 @@
 
 An engine for subtitles: it translates subtitle lines on the device, offline, with the Firefox Translations models, reads the text tracks inside Matroska (MKV) files, reads a film's audio through a read function of its caller (FFmpeg, audio only), and keeps a catalog of the models it works with, checking and installing them on disk. Built for apps: a C interface with JSON data, and a Dart package that drives it from a dedicated isolate.
 
-Version `0.4.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Mozilla's translation engine it builds on.
+Version `0.4.1`. License: [Mozilla Public License 2.0](LICENSE), the same as Mozilla's translation engine it builds on.
 
 ## Layout
 
@@ -53,7 +53,7 @@ Every string the engine returns, errors included, is freed with `se_free`. Error
 
 | Function | Input | Output |
 |---|---|---|
-| `se_version()` | | `"0.4.0"` |
+| `se_version()` | | `"0.4.1"` |
 | `se_translator_open(spec_json, &err)` | `{"models":[{"model","vocab","lex"}],"workspace_mb":128}`, one or two models; a model with separate vocabularies adds `"target_vocab"` (`"vocab"` is then the source one) | a translator, or `NULL` with `invalid_argument` / `model_load_failed` |
 | `se_translate(t, lines_json, &err)` | an array of strings, with `<i>…</i>` and `\n` | an array of the same length; lines without visible text come back unchanged; a sentence written twice by the model comes back once |
 | `se_translator_close(t)` | | |
