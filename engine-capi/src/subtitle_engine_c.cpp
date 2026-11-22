@@ -17,7 +17,7 @@ using namespace subtitle_engine::capi;
 
 extern "C" {
 
-SE_API const char* se_version(void) { return "0.4.1"; }
+SE_API const char* se_version(void) { return "0.4.2"; }
 
 SE_API void se_free(char* p) { std::free(p); }
 

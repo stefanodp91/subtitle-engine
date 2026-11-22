@@ -38,6 +38,7 @@ class AudioFeed {
     int64_t endMs = 0;        // the film time after the last one
     bool ended = false;       // no more samples after endMs
     std::string error;        // io_error… when the reading failed
+    std::string endDetail;    // why it ended, in numbers (AudioReader::endDetail)
     std::chrono::milliseconds idle{0};  // since the last samples came
   };
   State state() const;
@@ -62,6 +63,7 @@ class AudioFeed {
   bool startKnown_ = false;
   bool ended_ = false;
   std::string error_;
+  std::string endDetail_;
   std::chrono::steady_clock::time_point lastArrival_;
   std::atomic<int64_t> seekTo_{-1};
   std::atomic<bool> closing_{false};

@@ -170,6 +170,7 @@ Step Subtitler::Impl::finish(Step step, std::vector<Sentence> sentences, int64_t
   if (!step.cues.empty()) previous = step.cues.back();
   step.readyUntilMs = std::max(readyUntilMs, step.fromMs);
   step.status = atEnd ? StepStatus::kEndOfMedia : StepStatus::kCues;
+  if (atEnd) step.endDetail = feed->state().endDetail;
   {
     std::lock_guard<std::mutex> lock(readyMutex);
     ready.add(step.fromMs, step.readyUntilMs);

@@ -187,6 +187,18 @@ TEST_F(SubtitlerTest, SeekInsideReadyKeepsGoing) {
   EXPECT_EQ(third.fromMs, second.readyUntilMs);
 }
 
+// The end of the media says why, in numbers, for a caller's diagnostics.
+TEST_F(SubtitlerTest, TheEndSaysWhy) {
+  auto sub = openSubtitler(rec, source, spec());
+  sub->setTranslator(&translator);
+  sub->seek(110000);
+  Step s;
+  for (int i = 0; i < 10 && s.status != StepStatus::kEndOfMedia; ++i) s = sub->step();
+  ASSERT_EQ(s.status, StepStatus::kEndOfMedia);
+  EXPECT_NE(s.endDetail.find("size"), std::string::npos) << s.endDetail;
+  EXPECT_NE(s.endDetail.find("last seek 110000 ms"), std::string::npos) << s.endDetail;
+}
+
 TEST_F(SubtitlerTest, StallHearsWhatArrived) {
   const std::string path = fixture("audio_long.mkv");
   FileSource slow(path, FileSource(path).size() / 10, ReadStatus::kWait);  // about 12 s of audio
