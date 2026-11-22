@@ -83,7 +83,7 @@ struct Subtitler::Impl {
   std::vector<HeardCue> carryFirst, carrySecond;  // heard, in stretches not final yet
   std::string language;                           // whisper's code, once known
   int heardPieces = 0;
-  int64_t nextFromMs = 0;
+  std::atomic<int64_t> nextFromMs{0};  // read by seek() on any thread
   bool ended = false;
 
   struct Waiting {  // heard, cleaned and joined, waiting for a translator
