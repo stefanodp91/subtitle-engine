@@ -154,6 +154,32 @@ TEST(Subtitler, ResumesFromSavedRange) {
   EXPECT_EQ(stored->cues.front().text, "IT:Before the break.");
 }
 
+// A film opened again where a saved stretch already covers the start point:
+// the queue goes on where that stretch ends, not from the film's beginning.
+TEST(Subtitler, SeekIntoSavedRangeGoesOnFromItsEnd) {
+  const std::string path = folder("seek_saved") + "/subtitles.json";
+  FakeTranslator translator;
+  int64_t savedUntil = 0;
+  {
+    FakeRecognizer rec;
+    FileSource source(fixture("audio_long.mkv"));
+    auto sub = openWith(rec, source, storeSpec(path));
+    sub->setTranslator(&translator);
+    sub->seek(60000);
+    sub->step();
+    savedUntil = sub->step().readyUntilMs;
+  }
+  ASSERT_GT(savedUntil, 61000);
+  FakeRecognizer rec;
+  FileSource source(fixture("audio_long.mkv"));
+  auto sub = openWith(rec, source, storeSpec(path));
+  sub->setTranslator(&translator);
+  sub->seek(savedUntil - 1000);
+  Step s = sub->step();
+  EXPECT_EQ(s.fromMs, savedUntil);
+  EXPECT_LE(s.readyUntilMs - s.fromMs, 8000);  // short again where the saved stretch ends
+}
+
 TEST(Subtitler, SavedCuesStaySorted) {
   const std::string path = folder("sorted") + "/subtitles.json";
   FakeRecognizer rec;

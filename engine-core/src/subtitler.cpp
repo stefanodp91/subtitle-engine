@@ -44,7 +44,14 @@ void Subtitler::seek(int64_t positionMs) {
   Impl& m = *impl_;
   {
     std::lock_guard<std::mutex> lock(m.readyMutex);
-    if (m.ready.contains(positionMs)) return;  // heard already: the queue keeps going where it is
+    // Heard already, and the queue goes on where that stretch ends: it keeps
+    // going. A queue elsewhere (a subtitler just opened on saved stretches)
+    // starts over there; its step then skips to the stretch's end.
+    if (m.ready.contains(positionMs)) {
+      const int64_t queue = m.nextFromMs;
+      const int64_t queueGoesOnFrom = m.ready.contains(queue) ? m.ready.endOf(queue) : queue;
+      if (queueGoesOnFrom == m.ready.endOf(positionMs)) return;
+    }
   }
   m.pendingSeek = positionMs;
   ++m.generation;
@@ -163,6 +170,7 @@ Step Subtitler::Impl::finish(Step step, std::vector<Sentence> sentences, int64_t
   if (!step.cues.empty()) previous = step.cues.back();
   step.readyUntilMs = std::max(readyUntilMs, step.fromMs);
   step.status = atEnd ? StepStatus::kEndOfMedia : StepStatus::kCues;
+  if (atEnd) step.endDetail = feed->state().endDetail;
   {
     std::lock_guard<std::mutex> lock(readyMutex);
     ready.add(step.fromMs, step.readyUntilMs);

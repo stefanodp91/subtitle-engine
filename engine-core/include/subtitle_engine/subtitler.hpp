@@ -48,6 +48,7 @@ struct Step {
   int64_t fromMs = 0, readyUntilMs = 0;
   std::string audioLanguage, errorCode;
   std::vector<Cue> cues;
+  std::string endDetail;  // kEndOfMedia: why the media ended, in numbers, for diagnostics
 };
 
 enum class Stage { kAudio, kListening, kTranslating };

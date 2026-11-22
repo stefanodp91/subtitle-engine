@@ -46,6 +46,10 @@ class AudioReader {
   /// kError sets lastErrorCode(): io_error, or decode_error for a stream FFmpeg cannot decode.
   PullResult pull(std::vector<float>* samples, int64_t* firstSampleMs);
   const std::string& lastErrorCode() const;
+  /// Once pull() has given kEndOfMedia: why, in numbers only (FFmpeg's read code, the read
+  /// position and the source's size, the film time reached and the film's duration, the last
+  /// seek), for a caller's diagnostics.
+  const std::string& endDetail() const;
 
  private:
   struct Impl;

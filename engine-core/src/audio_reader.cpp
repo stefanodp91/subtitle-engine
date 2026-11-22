@@ -41,6 +41,9 @@ struct AudioReader::Impl {
   int64_t nextMs = 0;       // the film time after the last sample given
   bool flushed = false;     // the decoder drained at the end of the media
   std::string lastError;
+  std::string endDetail;
+  int64_t lastSeekMs = -1;  // the last seek's target, and FFmpeg's answer to it
+  int lastSeekResult = 0;
   std::vector<float> converted;
 
   AVStream* stream() const { return format->streams[tracks[chosen].index]; }
@@ -198,12 +201,15 @@ AudioReader::~AudioReader() = default;
 const std::vector<AudioTrack>& AudioReader::tracks() const { return impl_->tracks; }
 const AudioTrack& AudioReader::chosen() const { return impl_->tracks[impl_->chosen]; }
 const std::string& AudioReader::lastErrorCode() const { return impl_->lastError; }
+const std::string& AudioReader::endDetail() const { return impl_->endDetail; }
 
 bool AudioReader::seek(int64_t positionMs) {
   Impl& m = *impl_;
   m.bridge.clearFlags();
   const int64_t ts = av_rescale_q(positionMs, AVRational{1, 1000}, m.stream()->time_base);
-  if (av_seek_frame(m.format, m.tracks[m.chosen].index, ts, AVSEEK_FLAG_BACKWARD) < 0) return false;
+  m.lastSeekMs = positionMs;
+  m.lastSeekResult = av_seek_frame(m.format, m.tracks[m.chosen].index, ts, AVSEEK_FLAG_BACKWARD);
+  if (m.lastSeekResult < 0) return false;
   avcodec_flush_buffers(m.decoder);
   m.dropResampler();
   m.trimMs = positionMs;
@@ -223,6 +229,11 @@ PullResult AudioReader::pull(std::vector<float>* samples, int64_t* firstSampleMs
       m.lastError = m.failure();
       if (m.lastError == "cancelled") return PullResult::kCancelled;
       if (!m.lastError.empty()) return PullResult::kError;
+      const int64_t durationMs = m.format->duration > 0 ? m.format->duration / 1000 : -1;
+      m.endDetail = "read " + std::to_string(r) + " at byte " + std::to_string(avio_tell(m.format->pb)) + ", size " +
+                    std::to_string(avio_size(m.format->pb)) + ", film " + std::to_string(m.nextMs) + " of " +
+                    std::to_string(durationMs) + " ms, last seek " + std::to_string(m.lastSeekMs) +
+                    " ms: " + std::to_string(m.lastSeekResult);
       avcodec_send_packet(m.decoder, nullptr);  // the end: drain the decoder and the resampler
     } else if (m.packet->stream_index != m.tracks[m.chosen].index) {
       av_packet_unref(m.packet);

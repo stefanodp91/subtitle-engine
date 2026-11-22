@@ -2,7 +2,7 @@
 
 An engine for subtitles: it translates subtitle lines on the device, offline, with the Firefox Translations models, reads the text tracks inside Matroska (MKV) files, reads a film's audio through a read function of its caller (FFmpeg, audio only), and keeps a catalog of the models it works with, checking and installing them on disk. Built for apps: a C interface with JSON data, and a Dart package that drives it from a dedicated isolate.
 
-Version `0.4.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Mozilla's translation engine it builds on.
+Version `0.4.2`. License: [Mozilla Public License 2.0](LICENSE), the same as Mozilla's translation engine it builds on.
 
 ## Layout
 
@@ -53,7 +53,7 @@ Every string the engine returns, errors included, is freed with `se_free`. Error
 
 | Function | Input | Output |
 |---|---|---|
-| `se_version()` | | `"0.4.0"` |
+| `se_version()` | | `"0.4.2"` |
 | `se_translator_open(spec_json, &err)` | `{"models":[{"model","vocab","lex"}],"workspace_mb":128}`, one or two models; a model with separate vocabularies adds `"target_vocab"` (`"vocab"` is then the source one) | a translator, or `NULL` with `invalid_argument` / `model_load_failed` |
 | `se_translate(t, lines_json, &err)` | an array of strings, with `<i>…</i>` and `\n` | an array of the same length; lines without visible text come back unchanged; a sentence written twice by the model comes back once |
 | `se_translator_close(t)` | | |
@@ -64,7 +64,7 @@ Every string the engine returns, errors included, is freed with `se_free`. Error
 | `se_listener_open(spec_json, &err)` | `{"model","vad","threads":2,"vad_threads":1,"alignment_heads":"small","end_pad_ms":500,"moved_min_ms":1000,"start_before_end_ms":200}` (`alignment_heads`: `none`, `base`, `small`, `large_v3_turbo`) | a listener (whisper.cpp and Silero), or `NULL` with `invalid_argument` / `model_load_failed` |
 | `se_subtitler_open(listener, &source, spec_json, progress, opaque, &err)` | an `se_media_source` (the caller's read function: bytes, `SE_READ_END`, `SE_READ_WAIT`, `SE_READ_ERROR`), `{"target_language","track_language","prompt","store":{"path","media_id"},"config":{…}}` (every config key optional: see the header) | the queue, or `NULL` with `invalid_argument` / `io_error` / `no_audio` / `unsupported_codec` / `needs_end_of_file` |
 | `se_subtitler_set_translator(s, t, &err)` | a translator (or `NULL`), still the caller's | `1` |
-| `se_subtitler_step(s, &err)` | | blocking, one piece: `{"status","from_ms","ready_until_ms","audio_language","cues":[…]}` (status: `cues`, `end_of_media`, `cancelled`, `translator_needed`), or `NULL` with `io_error` / `store_failed` / … |
+| `se_subtitler_step(s, &err)` | | blocking, one piece: `{"status","from_ms","ready_until_ms","audio_language","cues":[…]}` (status: `cues`, `end_of_media`, `cancelled`, `translator_needed`; with `end_of_media` also `"end_detail"`, why the media ended in numbers, for diagnostics), or `NULL` with `io_error` / `store_failed` / … |
 | `se_subtitler_seek(s, ms)`, `se_subtitler_cancel(s)`, `se_subtitler_close(s)` | any thread for seek and cancel | outside the stretch already heard a running step returns `cancelled` |
 | `se_catalog_open(catalog_json, &err)`, `se_catalog_close(c)` | the text of `catalog/models.json` | a catalog, or `NULL` with `invalid_argument` / `unsupported_format` |
 | `se_catalog_models(c, &err)` | | `[{"id","kind","source_language","target_language","version","download_bytes","installed_bytes"}]` |
