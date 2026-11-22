@@ -80,6 +80,7 @@ void AudioFeed::run() {
       lastArrival_ = std::chrono::steady_clock::now();
     } else if (r == PullResult::kEndOfMedia) {
       ended_ = true;
+      endDetail_ = reader_->endDetail();
     } else if (r == PullResult::kError) {
       error_ = reader_->lastErrorCode();
     }
@@ -93,6 +94,7 @@ AudioFeed::State AudioFeed::state() const {
   s.startMs = startMs_;
   s.endMs = startMs_ + samplesToMs(buffer_.size());
   s.ended = ended_ && seekTo_ < 0;
+  s.endDetail = s.ended ? endDetail_ : "";
   s.error = seekTo_ < 0 ? error_ : "";
   s.idle = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - lastArrival_);
   return s;

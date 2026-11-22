@@ -204,11 +204,13 @@ SE_API char* se_subtitler_step(se_subtitler* subtitler, char** errorJson) try {
     setError(errorJson, s.errorCode);
     return nullptr;
   }
-  return duplicate(toJson(json{{"status", statusName(s.status)},
-                               {"from_ms", s.fromMs},
-                               {"ready_until_ms", s.readyUntilMs},
-                               {"audio_language", s.audioLanguage},
-                               {"cues", cuesJson(s.cues)}}));
+  json reply{{"status", statusName(s.status)},
+             {"from_ms", s.fromMs},
+             {"ready_until_ms", s.readyUntilMs},
+             {"audio_language", s.audioLanguage},
+             {"cues", cuesJson(s.cues)}};
+  if (!s.endDetail.empty()) reply["end_detail"] = s.endDetail;
+  return duplicate(toJson(reply));
 } catch (...) {
   setError(errorJson, "io_error");
   return nullptr;
