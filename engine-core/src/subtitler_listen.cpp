@@ -84,8 +84,10 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
 }
 
 // Hears a piece and adds its cues; false when the step went stale. The language
-// is fixed by the track or by the first piece with speech; second tries at a
-// higher temperature only for the retry languages and never on the first piece.
+// is fixed by the track or by the first piece with speech: whisper's words and
+// the voice detector's too, since on music whisper may write a line of one
+// repeated letter in a language it made up. Second tries at a higher
+// temperature only for the retry languages and never on the first piece.
 bool Subtitler::Impl::hearInto(const Piece& piece, std::vector<HeardCue>* into, const Stale& stale) {
   const auto& cfg = spec.config;
   HearOptions options;
@@ -97,7 +99,8 @@ bool Subtitler::Impl::hearInto(const Piece& piece, std::vector<HeardCue>* into, 
   Heard heard = recognizer.hear(piece.samples.data(), piece.samples.size(), piece.atMs, options);
   ++heardPieces;
   if (heard.cancelled || stale()) return false;
-  if (language.empty() && heard.spoken) language = heard.detectedLanguage;
+  if (language.empty() && heard.spoken && !recognizer.speech(piece.samples.data(), piece.samples.size(), piece.atMs).empty())
+    language = heard.detectedLanguage;
   into->insert(into->end(), heard.cues.begin(), heard.cues.end());
   return true;
 }
