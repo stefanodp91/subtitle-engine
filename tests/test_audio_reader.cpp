@@ -192,3 +192,20 @@ TEST(AudioReader, UnknownCodecIsUnsupported) {
   EXPECT_FALSE(openReader(source, {}, &error));
   EXPECT_EQ(error, "unsupported_codec");
 }
+
+// A film's index (Cues) lists the video only: a start in the middle is found
+// through it, not by reading the file from its start, which a download still
+// running has not got (BUG-333: two minutes of waiting in a stream).
+TEST(AudioReader, SeekReadsLittleOfTheFileBeforeThePlace) {
+  FileSource source(fixture("video_long.mkv"));
+  auto reader = openReader(source);
+  ASSERT_TRUE(reader);
+  source.bytesRead = 0;
+  ASSERT_TRUE(reader->seek(70000));
+  std::vector<float> samples;
+  int64_t first = -1;
+  ASSERT_EQ(reader->pull(&samples, &first), PullResult::kSamples);
+  EXPECT_GE(first, 68000);
+  EXPECT_LE(first, 70100);
+  EXPECT_LT(source.bytesRead.load(), source.size() / 4) << "read " << source.bytesRead.load() << " of " << source.size();
+}

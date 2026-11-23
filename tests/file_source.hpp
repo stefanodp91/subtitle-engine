@@ -39,6 +39,7 @@ class FileSource : public subtitle_engine::MediaSource {
     const size_t want = static_cast<size_t>(std::min<int64_t>(static_cast<int64_t>(length), limit - at));
     std::fseek(file_, static_cast<long>(at), SEEK_SET);
     const size_t got = std::fread(buffer, 1, want, file_);
+    bytesRead += static_cast<int64_t>(got);
     for (size_t i = 0; i < got; ++i)
       if (at + static_cast<int64_t>(i) >= zeroFrom_ && at + static_cast<int64_t>(i) < zeroTo_) buffer[i] = 0;
     return {got > 0 ? ReadStatus::kData : ReadStatus::kError, got};
@@ -47,6 +48,8 @@ class FileSource : public subtitle_engine::MediaSource {
 
   void setLimit(int64_t bytes) { limit_ = bytes; }  // any thread
   void failAt(int64_t offset) { failAt_ = offset; }
+  std::atomic<int64_t> bytesRead{0};  // all the reads so far; any thread may reset it
+
   void zeroBetween(int64_t from, int64_t to) {  // before the first read
     zeroFrom_ = from;
     zeroTo_ = to;
