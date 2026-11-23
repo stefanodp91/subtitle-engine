@@ -102,6 +102,19 @@ TEST_F(ListenerTest, DetectsOnTheWholePieceAfterAShortOne) {
   EXPECT_NE(allText(heard).find("snow"), std::string::npos) << allText(heard);
 }
 
+// A piece with no samples, after one with speech: whisper.cpp would decode the
+// audio of the call before again (it keeps its spectrogram) and abort in the word
+// timing; the listener hears nothing instead.
+TEST_F(ListenerTest, NoSamplesHearsNothing) {
+  for (int64_t from = 0; from <= 12000; from += 1000) {
+    auto audio = samples("speech/english.mkv", from, 17000);
+    ASSERT_FALSE(listener_->hear(audio.data(), audio.size(), from, {}).cues.empty());
+    Heard heard = listener_->hear(audio.data(), 0, 60000, {});
+    EXPECT_TRUE(heard.cues.empty()) << "after a piece from " << from << ": " << allText(heard);
+    EXPECT_FALSE(heard.spoken);
+  }
+}
+
 TEST_F(ListenerTest, KeepsFilmTime) {
   auto audio = samples("speech/english.mkv", 60000, 8000);
   HearOptions options;
