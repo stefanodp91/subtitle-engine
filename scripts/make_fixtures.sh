@@ -55,5 +55,9 @@ ffmpeg -v error -y -f ac3 -i "$AC3A.joined" -c:a copy "${A[@]}" "$F/audio_layout
 # Two minutes of a plain tone with no language tag, small (Opus, 6 kbps), for
 # the queue's tests: their speech comes from a script, not from the audio.
 ffmpeg -v error -y -f lavfi -i "sine=frequency=440:duration=120" -ac 1 -ar 48000 -c:a libopus -b:a 6k -vbr off "$F/audio_long.mkv"
+# 90 s of video and tone: its index (Cues) lists the video only, as a film's
+# does; a start in the middle is found through the video (BUG-333).
+ffmpeg -v error -y -f lavfi -i testsrc=duration=90:size=160x120:rate=25 -f lavfi -i sine=frequency=440:duration=90 \
+  -c:v libx264 -pix_fmt yuv420p -b:v 40k -g 50 -c:a aac -b:a 24k -metadata:s:a:0 language=eng "$F/video_long.mkv"
 rm -rf "$(dirname "$BASE")"
 echo "fixtures ready"

@@ -95,6 +95,18 @@ size_t pickTrack(const std::vector<AudioTrack>& tracks, const std::string& langu
   return 0;
 }
 
+// The stream to seek on: the first video that is not a cover, since a film's
+// index (Cues) lists its video only and a seek on the audio made FFmpeg read
+// the file from its start; the audio itself when there is no video.
+int seekStream(const AVFormatContext* format, int audio) {
+  for (unsigned i = 0; i < format->nb_streams; ++i) {
+    const AVStream* s = format->streams[i];
+    if (s->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && (s->disposition & AV_DISPOSITION_ATTACHED_PIC) == 0)
+      return static_cast<int>(i);
+  }
+  return audio;
+}
+
 }  // namespace
 
 bool AudioReader::Impl::setUpResampler(const AVFrame* in) {
@@ -206,9 +218,10 @@ const std::string& AudioReader::endDetail() const { return impl_->endDetail; }
 bool AudioReader::seek(int64_t positionMs) {
   Impl& m = *impl_;
   m.bridge.clearFlags();
-  const int64_t ts = av_rescale_q(positionMs, AVRational{1, 1000}, m.stream()->time_base);
+  const int on = seekStream(m.format, m.tracks[m.chosen].index);
+  const int64_t ts = av_rescale_q(positionMs, AVRational{1, 1000}, m.format->streams[on]->time_base);
   m.lastSeekMs = positionMs;
-  m.lastSeekResult = av_seek_frame(m.format, m.tracks[m.chosen].index, ts, AVSEEK_FLAG_BACKWARD);
+  m.lastSeekResult = av_seek_frame(m.format, on, ts, AVSEEK_FLAG_BACKWARD);
   if (m.lastSeekResult < 0) return false;
   avcodec_flush_buffers(m.decoder);
   m.dropResampler();
