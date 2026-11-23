@@ -28,6 +28,7 @@ bool Subtitler::Impl::keeps(const std::vector<Cue>& cues) const {
 
 // Waits until the audio from cursor holds a piece: cut at a pause by the rules,
 // or what arrived when the download stands still for stall, or the rest at the end.
+// A piece starts where the audio does, so its samples keep the film's time.
 Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const Stale& stale) {
   const auto& cfg = spec.config;
   Piece piece;
@@ -41,6 +42,10 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
       piece.kind = Piece::Kind::kError;
       piece.error = st.error;
       return piece;
+    }
+    if (st.startMs > cursor.atMs) {  // the audio starts later (a jump into a stretch the file has not): none before it
+      cursor.atMs = st.startMs;
+      cursor.lastProbeMs = -1;
     }
     const int64_t buffered = std::max<int64_t>(0, st.endMs - cursor.atMs);
     const int64_t limit = std::min<int64_t>(rules.piece.count(), rules.firstPiece.count() * (cursor.sinceRamp + 1));

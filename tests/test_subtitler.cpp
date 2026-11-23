@@ -9,6 +9,7 @@
 
 #include "fake_recognizer.hpp"
 #include "file_source.hpp"
+#include "subtitle_engine/audio_reader.hpp"
 #include "subtitle_engine/subtitler.hpp"
 
 using namespace subtitle_engine;
@@ -167,6 +168,42 @@ TEST_F(SubtitlerTest, LanguageWaitsForSpeech) {
   for (const auto& c : rec.calls()) EXPECT_NE(c.language, "nn") << "heard from " << c.startMs;
 }
 
+// A jump into a stretch the file does not have yet (zeros, a download with holes):
+// the audio comes back only later. The queue starts where the audio is, never
+// hears a piece without samples, and its pieces keep the film's time.
+TEST_F(SubtitlerTest, JumpIntoMissingAudioStartsWhereTheAudioIs) {
+  constexpr int64_t kHoleFrom = 56000, kHoleTo = 70000, kJumpMs = 60000;  // bytes; about 53 s to 66 s
+  int64_t back = -1;  // where the audio comes back after the hole
+  {
+    FileSource probe(fixture("audio_long.mkv"));
+    probe.zeroBetween(kHoleFrom, kHoleTo);
+    std::string error;
+    auto reader = AudioReader::open(probe, {}, &error);
+    ASSERT_TRUE(reader) << error;
+    ASSERT_TRUE(reader->seek(kJumpMs));
+    std::vector<float> got;
+    ASSERT_EQ(reader->pull(&got, &back), PullResult::kSamples);
+  }
+  ASSERT_GT(back, kJumpMs + 1000);
+
+  FileSource holed(fixture("audio_long.mkv"));
+  holed.zeroBetween(kHoleFrom, kHoleTo);
+  auto sub = openSubtitler(rec, holed, spec());
+  sub->setTranslator(&translator);
+  ASSERT_EQ(sub->step().status, StepStatus::kCues);
+  sub->seek(kJumpMs);
+  Step s = sub->step();
+  ASSERT_EQ(s.status, StepStatus::kCues) << s.errorCode;
+  EXPECT_EQ(s.fromMs, kJumpMs);
+  EXPECT_GT(s.readyUntilMs, back);
+  std::vector<FakeRecognizer::Call> after;
+  for (const auto& c : rec.calls())
+    if (c.startMs >= kJumpMs) after.push_back(c);
+  ASSERT_FALSE(after.empty());
+  EXPECT_EQ(after.front().startMs, back);
+  for (const auto& c : after) EXPECT_GT(c.durationMs, 0) << "heard from " << c.startMs;
+}
+
 TEST_F(SubtitlerTest, MusicAdvancesReadyWithoutCues) {
   rec.script = {{0, 10000}, {40000, 120000}};
   rec.cues = {{2000, 4000, "Before the music."}, {45000, 47000, "After the music."}};
@@ -233,7 +270,9 @@ TEST_F(SubtitlerTest, StallHearsWhatArrived) {
   EXPECT_LE(step.readyUntilMs, 14000);
   slow.setLimit(INT64_MAX);
   Step after = sub->step();
-  EXPECT_LE(after.readyUntilMs - after.fromMs, 8000);  // DEC-844: short again after a stall
+  // Short again after a stall (DEC-844); the piece starts where the audio does, which
+  // the packets' own times may put less than one frame (20 ms) after the step's start.
+  EXPECT_LE(after.readyUntilMs - after.fromMs, 8000 + 20);
 }
 
 TEST_F(SubtitlerTest, RetryOnlyForListedLanguagesAfterFirstPiece) {
