@@ -147,6 +147,26 @@ TEST_F(SubtitlerTest, TrackLanguageWins) {
   for (const auto& c : rec.calls()) EXPECT_EQ(c.language, "en");
 }
 
+// An opening of music with no language tag: whisper writes a line of
+// one repeated letter there and guesses a wrong language; the language waits for
+// a piece where the voice detector hears speech.
+TEST_F(SubtitlerTest, LanguageWaitsForSpeech) {
+  rec.language = "en";
+  rec.musicLanguage = "nn";
+  rec.script = {{15000, 1000000}};
+  rec.cues = {{7000, 8000, "\xE1\x83\x9A\xE1\x83\x9A\xE1\x83\x9A\xE1\x83\x9A"},
+              {16000, 18000, "At the left we can see."}};
+  auto sub = openSubtitler(rec, source, spec());
+  sub->setTranslator(&translator);
+  Step s;
+  for (int i = 0; i < 10 && s.readyUntilMs <= 30000; ++i) {
+    s = sub->step();
+    ASSERT_NE(s.status, StepStatus::kError) << s.errorCode;
+  }
+  EXPECT_EQ(s.audioLanguage, "en");
+  for (const auto& c : rec.calls()) EXPECT_NE(c.language, "nn") << "heard from " << c.startMs;
+}
+
 TEST_F(SubtitlerTest, MusicAdvancesReadyWithoutCues) {
   rec.script = {{0, 10000}, {40000, 120000}};
   rec.cues = {{2000, 4000, "Before the music."}, {45000, 47000, "After the music."}};

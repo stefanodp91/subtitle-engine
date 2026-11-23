@@ -1,0 +1,34 @@
+--- a/src/whisper.cpp
++++ b/src/whisper.cpp
+@@ -6995,7 +6995,16 @@
+             WHISPER_LOG_ERROR("%s: failed to compute log mel spectrogram\n", __func__);
+             return -2;
+         }
++    }
++
++    // overwrite audio_ctx, max allowed is hparams.n_audio_ctx; before the
++    // language detection, which encodes with it: else it used the audio length
++    // of the call before
++    if (params.audio_ctx > whisper_n_audio_ctx(ctx)) {
++        WHISPER_LOG_ERROR("%s: audio_ctx is larger than the maximum allowed (%d > %d)\n", __func__, params.audio_ctx, whisper_n_audio_ctx(ctx));
++        return -5;
+     }
++    state->exp_n_audio_ctx = params.audio_ctx;
+ 
+     // auto-detect language if not specified
+     if (params.language == nullptr || strlen(params.language) == 0 || strcmp(params.language, "auto") == 0 || params.detect_language) {
+@@ -7144,14 +7153,7 @@
+                 std::rotate(prompt_past1.begin(), prompt_past1.end() - params.prompt_n_tokens, prompt_past1.end());
+             }
+         }
+-    }
+-
+-    // overwrite audio_ctx, max allowed is hparams.n_audio_ctx
+-    if (params.audio_ctx > whisper_n_audio_ctx(ctx)) {
+-        WHISPER_LOG_ERROR("%s: audio_ctx is larger than the maximum allowed (%d > %d)\n", __func__, params.audio_ctx, whisper_n_audio_ctx(ctx));
+-        return -5;
+     }
+-    state->exp_n_audio_ctx = params.audio_ctx;
+ 
+     // these tokens determine the task that will be performed
+     std::vector<whisper_token> prompt_init = { whisper_token_sot(ctx), };

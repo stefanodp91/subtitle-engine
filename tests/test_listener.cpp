@@ -90,6 +90,18 @@ TEST_F(ListenerTest, DetectsItalian) {
   EXPECT_EQ(listener_->hear(audio.data(), audio.size(), 0, {}).detectedLanguage, "it");
 }
 
+// whisper.cpp 1.9.5 detected the language with the audio length of the
+// call before: after a short piece it looked only at the start of a longer one.
+// Here a piece of tone then speech is heard after two seconds of tone.
+TEST_F(ListenerTest, DetectsOnTheWholePieceAfterAShortOne) {
+  auto tone = samples("speech/english.mkv", 30000, 2000);
+  auto toneThenSpeech = samples("speech/english.mkv", 44000, 16000);  // the voice is back at about 52 s
+  listener_->hear(tone.data(), tone.size(), 30000, {});
+  Heard heard = listener_->hear(toneThenSpeech.data(), toneThenSpeech.size(), 44000, {});
+  EXPECT_EQ(heard.detectedLanguage, "en");
+  EXPECT_NE(allText(heard).find("snow"), std::string::npos) << allText(heard);
+}
+
 TEST_F(ListenerTest, KeepsFilmTime) {
   auto audio = samples("speech/english.mkv", 60000, 8000);
   HearOptions options;
