@@ -34,6 +34,7 @@ class FakeRecognizer : public subtitle_engine::SpeechRecognizer {
   };
 
   std::string language = "en";                         // what it detects
+  std::string musicLanguage;  // what it detects in a piece with no speech; empty: language
   std::vector<subtitle_engine::SpeechSpan> script{{0, 1000000}};  // speech, in film time
   std::vector<ScriptCue> cues;                          // in film time
   std::atomic<bool> holdUntilCancelled{false};
@@ -61,7 +62,10 @@ class FakeRecognizer : public subtitle_engine::SpeechRecognizer {
       heard.cancelled = true;
       return heard;
     }
-    heard.detectedLanguage = options.language.empty() ? language : options.language;
+    const bool voiced = !speech(nullptr, count, startMs).empty();
+    heard.detectedLanguage = !options.language.empty()                  ? options.language
+                             : !voiced && !musicLanguage.empty() ? musicLanguage
+                                                                  : language;
     for (const auto& c : cues)  // whisper writes what starts in the piece
       if (c.startMs >= startMs && c.startMs < startMs + duration && startMs >= c.pieceFromMs && startMs <= c.pieceToMs)
         heard.cues.push_back({{c.startMs, c.endMs, c.text}, c.sure, c.tokens});

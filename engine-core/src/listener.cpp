@@ -103,6 +103,9 @@ std::vector<SpeechSpan> Listener::speech(const float* samples, size_t count, int
 
 Heard Listener::hear(const float* samples, size_t count, int64_t startMs, const HearOptions& options) {
   Heard heard;
+  // No samples, nothing heard: whisper.cpp would decode the audio of the call before
+  // again, which it keeps, and abort in the word timing.
+  if (count == 0) return heard;
   whisper_full_params wp = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
   wp.n_threads = impl_->spec.threads;
   wp.print_progress = wp.print_realtime = wp.print_timestamps = wp.print_special = false;

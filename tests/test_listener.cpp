@@ -90,6 +90,31 @@ TEST_F(ListenerTest, DetectsItalian) {
   EXPECT_EQ(listener_->hear(audio.data(), audio.size(), 0, {}).detectedLanguage, "it");
 }
 
+// whisper.cpp 1.9.5 detected the language with the audio length of the
+// call before: after a short piece it looked only at the start of a longer one.
+// Here a piece of tone then speech is heard after two seconds of tone.
+TEST_F(ListenerTest, DetectsOnTheWholePieceAfterAShortOne) {
+  auto tone = samples("speech/english.mkv", 30000, 2000);
+  auto toneThenSpeech = samples("speech/english.mkv", 44000, 16000);  // the voice is back at about 52 s
+  listener_->hear(tone.data(), tone.size(), 30000, {});
+  Heard heard = listener_->hear(toneThenSpeech.data(), toneThenSpeech.size(), 44000, {});
+  EXPECT_EQ(heard.detectedLanguage, "en");
+  EXPECT_NE(allText(heard).find("snow"), std::string::npos) << allText(heard);
+}
+
+// A piece with no samples, after one with speech: whisper.cpp would decode the
+// audio of the call before again (it keeps its spectrogram) and abort in the word
+// timing; the listener hears nothing instead.
+TEST_F(ListenerTest, NoSamplesHearsNothing) {
+  for (int64_t from = 0; from <= 12000; from += 1000) {
+    auto audio = samples("speech/english.mkv", from, 17000);
+    ASSERT_FALSE(listener_->hear(audio.data(), audio.size(), from, {}).cues.empty());
+    Heard heard = listener_->hear(audio.data(), 0, 60000, {});
+    EXPECT_TRUE(heard.cues.empty()) << "after a piece from " << from << ": " << allText(heard);
+    EXPECT_FALSE(heard.spoken);
+  }
+}
+
 TEST_F(ListenerTest, KeepsFilmTime) {
   auto audio = samples("speech/english.mkv", 60000, 8000);
   HearOptions options;

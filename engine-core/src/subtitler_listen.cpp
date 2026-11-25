@@ -28,6 +28,7 @@ bool Subtitler::Impl::keeps(const std::vector<Cue>& cues) const {
 
 // Waits until the audio from cursor holds a piece: cut at a pause by the rules,
 // or what arrived when the download stands still for stall, or the rest at the end.
+// A piece starts where the audio does, so its samples keep the film's time.
 Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const Stale& stale) {
   const auto& cfg = spec.config;
   Piece piece;
@@ -41,6 +42,10 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
       piece.kind = Piece::Kind::kError;
       piece.error = st.error;
       return piece;
+    }
+    if (st.startMs > cursor.atMs) {  // the audio starts later (a jump into a stretch the file has not): none before it
+      cursor.atMs = st.startMs;
+      cursor.lastProbeMs = -1;
     }
     const int64_t buffered = std::max<int64_t>(0, st.endMs - cursor.atMs);
     const int64_t limit = std::min<int64_t>(rules.piece.count(), rules.firstPiece.count() * (cursor.sinceRamp + 1));
@@ -84,8 +89,10 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
 }
 
 // Hears a piece and adds its cues; false when the step went stale. The language
-// is fixed by the track or by the first piece with speech; second tries at a
-// higher temperature only for the retry languages and never on the first piece.
+// is fixed by the track or by the first piece with speech: whisper's words and
+// the voice detector's too, since on music whisper may write a line of one
+// repeated letter in a language it made up. Second tries at a higher
+// temperature only for the retry languages and never on the first piece.
 bool Subtitler::Impl::hearInto(const Piece& piece, std::vector<HeardCue>* into, const Stale& stale) {
   const auto& cfg = spec.config;
   HearOptions options;
@@ -97,7 +104,8 @@ bool Subtitler::Impl::hearInto(const Piece& piece, std::vector<HeardCue>* into, 
   Heard heard = recognizer.hear(piece.samples.data(), piece.samples.size(), piece.atMs, options);
   ++heardPieces;
   if (heard.cancelled || stale()) return false;
-  if (language.empty() && heard.spoken) language = heard.detectedLanguage;
+  if (language.empty() && heard.spoken && !recognizer.speech(piece.samples.data(), piece.samples.size(), piece.atMs).empty())
+    language = heard.detectedLanguage;
   into->insert(into->end(), heard.cues.begin(), heard.cues.end());
   return true;
 }
