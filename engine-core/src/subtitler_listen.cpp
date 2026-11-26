@@ -47,8 +47,16 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
       cursor.atMs = st.startMs;
       cursor.lastProbeMs = -1;
     }
-    const int64_t buffered = std::max<int64_t>(0, st.endMs - cursor.atMs);
-    const int64_t limit = std::min<int64_t>(rules.piece.count(), rules.firstPiece.count() * (cursor.sinceRamp + 1));
+    // A piece stops where a stretch already heard begins: nothing is heard twice.
+    int64_t heardAhead;
+    {
+      std::lock_guard<std::mutex> lock(readyMutex);
+      heardAhead = ready.nextStartAfter(cursor.atMs);
+    }
+    const int64_t bound = heardAhead < 0 ? INT64_MAX : heardAhead - cursor.atMs;
+    const int64_t buffered = std::min(std::max<int64_t>(0, st.endMs - cursor.atMs), bound);
+    const int64_t limit =
+        std::min<int64_t>({rules.piece.count(), rules.firstPiece.count() * (cursor.sinceRamp + 1), bound});
     auto speechTo = [&](int64_t untilMs) {
       const auto samples = feed->samples(cursor.atMs, untilMs);
       return recognizer.speech(samples.data(), samples.size(), cursor.atMs);
@@ -67,6 +75,8 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
       cut = buffered;  // the download stands still: hear what arrived
       stalled = true;
     }
+    if (!cut && buffered >= bound) cut = bound;  // up to the stretch heard already, pause or not
+    if (cut) cut = std::min(*cut, bound);
     if (cut && *cut > 0) {
       piece.kind = Piece::Kind::kAudio;
       piece.atMs = cursor.atMs;

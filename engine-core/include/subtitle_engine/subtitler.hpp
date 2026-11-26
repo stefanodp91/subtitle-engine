@@ -38,6 +38,7 @@ struct SubtitlerSpec {
   std::string prompt;          // the characters' names
   std::string storePath;       // where the subtitles generated so far are kept; empty: nowhere
   std::string mediaId;         // the fingerprint of the film's version, from the caller (DEC-858)
+  std::string storeModel;      // what makes the cues, as the caller names it: a file of another model is heard again
   SubtitlerConfig config;
 };
 

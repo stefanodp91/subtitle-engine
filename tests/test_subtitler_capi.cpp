@@ -171,3 +171,31 @@ TEST(SubtitlerCapi, LoadsSavedSubtitles) {
   se_listener_close(listener);
   std::fclose(f.file);
 }
+
+// The saved lines read with the same store object the subtitler is given:
+// the model that made them must be the one asked for. The plain load keeps
+// reading any model. The output is the one a host splits by stretch.
+TEST(SubtitlerCapi, SavedLinesOfTheModelAskedFor) {
+  const std::string dir = std::string(SE_TMP) + "/capi_store_model";
+  ::mkdir(dir.c_str(), 0755);
+  const std::string path = dir + "/subtitles.json";
+  std::ofstream(path, std::ios::trunc)
+      << R"({"format":2,"media_id":"film-v1","target_language":"it","audio_language":"en","model":"speech@1",)"
+         R"("ranges":[[0,8000],[20000,28000]],"cues":[{"start_ms":1000,"end_ms":3000,"text":"Ciao."},)"
+         R"({"start_ms":20000,"end_ms":21000,"text":"Di nuovo."}]})";
+  char* error = nullptr;
+  const json store{{"path", path}, {"media_id", "film-v1"}, {"model", "speech@1"}};
+  char* loaded = se_subtitles_load_store(store.dump().c_str(), "it", &error);
+  ASSERT_NE(loaded, nullptr) << errorCode(error);
+  EXPECT_EQ(takeJson(loaded).dump(),
+            R"({"audio_language":"en","cues":[{"end_ms":3000,"start_ms":1000,"text":"Ciao."},)"
+            R"({"end_ms":21000,"start_ms":20000,"text":"Di nuovo."}],"ranges":[[0,8000],[20000,28000]]})");
+  const json other{{"path", path}, {"media_id", "film-v1"}, {"model", "speech@2"}};
+  EXPECT_EQ(se_subtitles_load_store(other.dump().c_str(), "it", &error), nullptr);
+  EXPECT_EQ(errorCode(error), "other_model");
+  EXPECT_EQ(se_subtitles_load_store("not json", "it", &error), nullptr);
+  EXPECT_EQ(errorCode(error), "invalid_argument");
+  char* plain = se_subtitles_load(path.c_str(), "film-v1", "it", &error);
+  ASSERT_NE(plain, nullptr) << errorCode(error);
+  se_free(plain);
+}
