@@ -12,6 +12,7 @@ class ReadyRanges {
   void add(int64_t fromMs, int64_t toMs);
   bool contains(int64_t positionMs) const;
   int64_t endOf(int64_t positionMs) const;  // the end of the stretch holding positionMs, or positionMs
+  int64_t nextStartAfter(int64_t positionMs) const;  // the start of the first stretch after positionMs, or -1
   const std::vector<std::pair<int64_t, int64_t>>& spans() const { return spans_; }
 
  private:

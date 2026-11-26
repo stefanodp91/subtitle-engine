@@ -29,4 +29,10 @@ int64_t ReadyRanges::endOf(int64_t positionMs) const {
   return positionMs;
 }
 
+int64_t ReadyRanges::nextStartAfter(int64_t positionMs) const {
+  for (const auto& s : spans_)
+    if (s.first > positionMs) return s.first;
+  return -1;
+}
+
 }  // namespace subtitle_engine

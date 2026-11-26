@@ -26,7 +26,7 @@ std::unique_ptr<Subtitler> Subtitler::open(SpeechRecognizer& recognizer, MediaSo
   if (!impl->spec.storePath.empty()) {
     impl->store.emplace(impl->spec.storePath);
     std::string ignored;  // not found, broken or another version: started over, rewritten at the first step
-    if (auto saved = impl->store->load(impl->spec.mediaId, impl->spec.targetLanguage, &ignored)) {
+    if (auto saved = impl->store->load(impl->spec.mediaId, impl->spec.targetLanguage, impl->spec.storeModel, &ignored)) {
       impl->ready = saved->ranges;
       impl->storedCues = std::move(saved->cues);
       if (impl->language.empty()) impl->language = saved->audioLanguage;
@@ -107,6 +107,7 @@ bool Subtitler::Impl::save(const std::vector<Cue>& cues, std::string* errorCode)
   s.mediaId = spec.mediaId;
   s.targetLanguage = spec.targetLanguage;
   s.audioLanguage = language;
+  s.model = spec.storeModel;
   {
     std::lock_guard<std::mutex> lock(readyMutex);
     s.ranges = ready;
@@ -167,8 +168,15 @@ Step Subtitler::Impl::finish(Step step, std::vector<Sentence> sentences, int64_t
   report(Stage::kTranslating, 0);
   if (translate && !sentences.empty()) sentences = translateSentences(sentences, *translator);
   step.cues = formatter.format(previous, sentences);
-  if (!step.cues.empty()) previous = step.cues.back();
   step.readyUntilMs = std::max(readyUntilMs, step.fromMs);
+  // A cue pushed after the one before it never starts past its stretch: a
+  // reader that sorts the cues by stretch would lose it.
+  for (Cue& c : step.cues) {
+    if (c.startMs < step.readyUntilMs || step.readyUntilMs <= step.fromMs) continue;
+    c.startMs = step.readyUntilMs - 1;
+    c.endMs = std::max(c.endMs, c.startMs + 1);
+  }
+  if (!step.cues.empty()) previous = step.cues.back();
   step.status = atEnd ? StepStatus::kEndOfMedia : StepStatus::kCues;
   if (atEnd) step.endDetail = feed->state().endDetail;
   {
