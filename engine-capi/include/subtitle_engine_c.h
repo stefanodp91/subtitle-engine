@@ -114,7 +114,9 @@ SE_API int se_subtitler_set_translator(se_subtitler* subtitler, se_translator* t
 
 /* Blocking: hears, cleans, translates and shapes one piece. Returns
  * {"status":"cues"|"end_of_media"|"cancelled"|"translator_needed","from_ms":…,"ready_until_ms":…,
- *  "audio_language":"en","cues":[{"start_ms","end_ms","text"}]}, or NULL with code io_error,
+ *  "audio_language":"en","cues":[{"start_ms","end_ms","text"}]}, with "save_ms" (how long the
+ * step's save took, the file on the disk included, to a tenth of a millisecond) when the spec has
+ * a store and the step saved, or NULL with code io_error,
  * no_audio, unsupported_codec, needs_end_of_file, store_failed or decode_error. */
 SE_API char* se_subtitler_step(se_subtitler* subtitler, char** error_json);
 
