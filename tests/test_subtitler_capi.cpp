@@ -172,6 +172,34 @@ TEST(SubtitlerCapi, LoadsSavedSubtitles) {
   std::fclose(f.file);
 }
 
+// Each step that heard a piece says how it spent its time and what the piece held, in numbers.
+TEST(SubtitlerCapi, StepSaysHowItSpentItsTime) {
+  if (!haveSpeech()) GTEST_SKIP() << "run scripts/fetch_test_models.sh and scripts/make_speech_fixtures.sh";
+  char* error = nullptr;
+  se_listener* listener = se_listener_open(listenerSpec().c_str(), &error);
+  ASSERT_NE(listener, nullptr) << errorCode(error);
+  CFile f;
+  se_media_source source = sourceOver(&f, fixture("speech/english.mkv"));
+  const json spec{{"target_language", "en"}};
+  se_subtitler* sub = se_subtitler_open(listener, &source, spec.dump().c_str(), nullptr, nullptr, &error);
+  ASSERT_NE(sub, nullptr) << errorCode(error);
+  json step = takeJson(se_subtitler_step(sub, &error));
+  ASSERT_EQ(step.at("status"), "cues");
+  ASSERT_TRUE(step.contains("timing"));
+  const json& t = step.at("timing");
+  for (const char* key : {"wait_ms", "speech_probe_ms", "hear_ms", "translate_ms"}) EXPECT_GE(t.at(key).get<double>(), 0.0) << key;
+  // A piece cut back by a packed cue covered more than the step made ready; otherwise the same.
+  const int64_t ready = step.at("ready_until_ms").get<int64_t>() - step.at("from_ms").get<int64_t>();
+  if (t.at("reheard").get<bool>())
+    EXPECT_GT(t.at("piece_ms").get<int64_t>(), ready);
+  else
+    EXPECT_EQ(t.at("piece_ms").get<int64_t>(), ready);
+  EXPECT_GE(t.at("speech_ms").get<int64_t>(), 0);
+  se_subtitler_close(sub);
+  std::fclose(f.file);
+  se_listener_close(listener);
+}
+
 // Each step with a store says how long its save took, the file written to the disk included;
 // without a store it says nothing of it.
 TEST(SubtitlerCapi, StepSaysHowLongItsSaveTook) {

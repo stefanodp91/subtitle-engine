@@ -139,7 +139,10 @@ Step Subtitler::step() {
     step.readyUntilMs = m.nextFromMs;
     return step;
   }
+  m.timing = StepTiming{};
+  m.timing.waitMs = m.timing.speechProbeMs = m.timing.hearMs = 0;
   Listened heard = m.listen(stale);
+  if (m.timing.pieceMs >= 0) step.timing = m.timing;
   step.audioLanguage = m.language;
   if (heard.kind == Piece::Kind::kCancelled || stale()) {
     step.status = StepStatus::kCancelled;
@@ -167,7 +170,11 @@ Step Subtitler::Impl::finish(Step step, std::vector<Sentence> sentences, int64_t
     return step;
   }
   report(Stage::kTranslating, 0);
+  const auto translating = std::chrono::steady_clock::now();
   if (translate && !sentences.empty()) sentences = translateSentences(sentences, *translator);
+  if (step.timing.pieceMs >= 0)
+    step.timing.translateMs =
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - translating).count();
   step.cues = formatter.format(previous, sentences);
   step.readyUntilMs = std::max(readyUntilMs, step.fromMs);
   // A cue pushed after the one before it never starts past its stretch: a
