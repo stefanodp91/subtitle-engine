@@ -391,3 +391,61 @@ TEST_F(SubtitlerTest, PackedCueAtPieceEndHeardAgain) {
     EXPECT_TRUE(real_);
   }
 }
+
+// Each step that heard a piece says how it spent its time and what the piece held;
+// a step that heard nothing says nothing of it.
+TEST_F(SubtitlerTest, StepSaysHowItSpentItsTime) {
+  rec.script = {{2000, 4000}, {6000, 6500}};
+  rec.cues = {{2000, 4000, "Hello there."}};
+  auto sub = openSubtitler(rec, source, spec("it"));
+  sub->setTranslator(&translator);
+  Step s = sub->step();
+  ASSERT_EQ(s.status, StepStatus::kCues);
+  EXPECT_EQ(s.timing.pieceMs, s.readyUntilMs - s.fromMs);
+  EXPECT_GE(s.timing.waitMs, 0.0);
+  EXPECT_GE(s.timing.speechProbeMs, 0.0);
+  EXPECT_LE(s.timing.speechProbeMs, s.timing.waitMs);
+  EXPECT_GE(s.timing.hearMs, 0.0);
+  EXPECT_GE(s.timing.translateMs, 0.0);
+  int64_t speech = 0;  // the script's speech within the piece
+  for (const auto& span : rec.script)
+    speech += std::max<int64_t>(0, std::min(span.endMs, s.readyUntilMs) - std::max(span.startMs, s.fromMs));
+  EXPECT_EQ(s.timing.speechMs, speech);
+  EXPECT_GE(speech, 2000);
+  EXPECT_FALSE(s.timing.reheard);
+  Step end;
+  for (int i = 0; i < 30 && end.status != StepStatus::kEndOfMedia; ++i) end = sub->step();
+  ASSERT_EQ(end.status, StepStatus::kEndOfMedia);
+  EXPECT_LT(end.timing.pieceMs, 0);
+}
+
+// The piece heard before the translator came keeps its time on the step that gives its cues.
+TEST_F(SubtitlerTest, TimingWaitsWithTheTranslator) {
+  rec.cues = {{2000, 4000, "Hello there."}};
+  auto sub = openSubtitler(rec, source, spec("it"));
+  Step first = sub->step();
+  ASSERT_EQ(first.status, StepStatus::kTranslatorNeeded);
+  sub->setTranslator(&translator);
+  Step again = sub->step();
+  ASSERT_EQ(again.status, StepStatus::kCues);
+  EXPECT_EQ(again.timing.pieceMs, again.readyUntilMs - again.fromMs);
+  EXPECT_GE(again.timing.hearMs, 0.0);
+  EXPECT_GE(again.timing.translateMs, 0.0);
+}
+
+// A packed cue cuts the piece back: the step says it, and the piece it heard.
+TEST_F(SubtitlerTest, TimingSaysWhenAPackedCueCutThePiece) {
+  FakeRecognizer r;
+  r.cues.push_back({1000, 3000, "A first line spoken at its pace."});
+  ScriptCue packed{7800, 8000, "They're gonna kill us! We're just gonna catch one!"};
+  packed.pieceToMs = 0;
+  r.cues.push_back(packed);
+  SubtitlerSpec s = spec();
+  s.config.pieces.firstPiece = 8000ms;
+  auto sub = openSubtitler(r, source, s);
+  sub->setTranslator(&translator);
+  Step step = sub->step();
+  EXPECT_TRUE(step.timing.reheard);
+  EXPECT_EQ(step.readyUntilMs, 7800);
+  EXPECT_GT(step.timing.pieceMs, step.readyUntilMs - step.fromMs);
+}

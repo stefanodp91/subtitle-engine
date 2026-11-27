@@ -44,6 +44,18 @@ struct SubtitlerSpec {
 
 enum class StepStatus { kCues, kEndOfMedia, kCancelled, kTranslatorNeeded, kError };
 
+// How a step that heard a piece spent its time, and what the piece held, for
+// diagnostics: numbers only, no text. pieceMs < 0 for a step that heard nothing.
+struct StepTiming {
+  double waitMs = -1;         // waiting for the piece: the audio's bytes and the speech detector's probes
+  double speechProbeMs = -1;  // of which, the speech detector
+  double hearMs = -1;         // the recognizer on the piece
+  double translateMs = -1;    // the translator on the step's sentences; 0 without one
+  int64_t pieceMs = -1;       // the media the piece covered, before a packed cue cut it back
+  int64_t speechMs = -1;      // the speech the detector found in the piece; -1 if it was not asked
+  bool reheard = false;       // a cue packed denser than speech cut the piece back, to be heard again
+};
+
 struct Step {
   StepStatus status = StepStatus::kCues;
   int64_t fromMs = 0, readyUntilMs = 0;
@@ -51,6 +63,7 @@ struct Step {
   std::vector<Cue> cues;
   std::string endDetail;  // kEndOfMedia: why the media ended, in numbers, for diagnostics
   double saveMs = -1;     // with a store: how long the step's save took, the file on the disk included
+  StepTiming timing;      // a step that heard a piece: how it spent its time
 };
 
 enum class Stage { kAudio, kListening, kTranslating };

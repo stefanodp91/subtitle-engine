@@ -32,6 +32,7 @@ struct Piece {
   int64_t atMs = 0, endMs = 0;
   std::vector<float> samples;
   bool ramp = false;  // the first piece after the start, a jump or a stall
+  int64_t speechMs = -1;  // the speech the detector found in it, when it was asked
   std::string error;
 };
 
@@ -78,6 +79,8 @@ struct Subtitler::Impl {
 
   CueCleaner cleaner;
   CueFormatter formatter;
+
+  StepTiming timing;  // the step in course: how it spends its time (diagnostics)
   std::optional<Cue> previous;  // the last cue given out
   Cursor first, second;
   std::vector<HeardCue> carryFirst, carrySecond;  // heard, in stretches not final yet

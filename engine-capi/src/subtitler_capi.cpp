@@ -213,6 +213,16 @@ SE_API char* se_subtitler_step(se_subtitler* subtitler, char** errorJson) try {
              {"cues", cuesJson(s.cues)}};
   if (!s.endDetail.empty()) reply["end_detail"] = s.endDetail;
   if (s.saveMs >= 0) reply["save_ms"] = std::round(s.saveMs * 10) / 10;
+  if (s.timing.pieceMs >= 0) {
+    const auto tenth = [](double ms) { return std::round(ms * 10) / 10; };
+    reply["timing"] = {{"wait_ms", tenth(s.timing.waitMs)},
+                       {"speech_probe_ms", tenth(s.timing.speechProbeMs)},
+                       {"hear_ms", tenth(s.timing.hearMs)},
+                       {"translate_ms", tenth(std::max(0.0, s.timing.translateMs))},
+                       {"piece_ms", s.timing.pieceMs},
+                       {"speech_ms", s.timing.speechMs},
+                       {"reheard", s.timing.reheard}};
+  }
   return duplicate(toJson(reply));
 } catch (...) {
   setError(errorJson, "io_error");
