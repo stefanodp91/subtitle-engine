@@ -2,7 +2,7 @@
 
 An engine for subtitles: it translates subtitle lines on the device, offline, with the Firefox Translations models, reads the text tracks inside Matroska (MKV) files, reads a film's audio through a read function of its caller (FFmpeg, audio only), and keeps a catalog of the models it works with, checking and installing them on disk. Built for apps: a C interface with JSON data, and a Dart package that drives it from a dedicated isolate.
 
-Version `0.5.0`. License: [Mozilla Public License 2.0](LICENSE), the same as Mozilla's translation engine it builds on.
+Version `0.5.0` ([changes by version](CHANGELOG.md)). License: [Mozilla Public License 2.0](LICENSE), the same as Mozilla's translation engine it builds on.
 
 ## Layout
 
