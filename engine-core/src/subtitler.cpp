@@ -4,6 +4,7 @@
 #include "subtitle_engine/subtitler.hpp"
 
 #include <algorithm>
+#include <chrono>
 
 #include "sentence_joiner.hpp"
 #include "subtitler_impl.hpp"
@@ -26,7 +27,7 @@ std::unique_ptr<Subtitler> Subtitler::open(SpeechRecognizer& recognizer, MediaSo
   if (!impl->spec.storePath.empty()) {
     impl->store.emplace(impl->spec.storePath);
     std::string ignored;  // not found, broken or another version: started over, rewritten at the first step
-    if (auto saved = impl->store->load(impl->spec.mediaId, impl->spec.targetLanguage, &ignored)) {
+    if (auto saved = impl->store->load(impl->spec.mediaId, impl->spec.targetLanguage, impl->spec.storeModel, &ignored)) {
       impl->ready = saved->ranges;
       impl->storedCues = std::move(saved->cues);
       if (impl->language.empty()) impl->language = saved->audioLanguage;
@@ -107,6 +108,7 @@ bool Subtitler::Impl::save(const std::vector<Cue>& cues, std::string* errorCode)
   s.mediaId = spec.mediaId;
   s.targetLanguage = spec.targetLanguage;
   s.audioLanguage = language;
+  s.model = spec.storeModel;
   {
     std::lock_guard<std::mutex> lock(readyMutex);
     s.ranges = ready;
@@ -137,7 +139,10 @@ Step Subtitler::step() {
     step.readyUntilMs = m.nextFromMs;
     return step;
   }
+  m.timing = StepTiming{};
+  m.timing.waitMs = m.timing.speechProbeMs = m.timing.hearMs = 0;
   Listened heard = m.listen(stale);
+  if (m.timing.pieceMs >= 0) step.timing = m.timing;
   step.audioLanguage = m.language;
   if (heard.kind == Piece::Kind::kCancelled || stale()) {
     step.status = StepStatus::kCancelled;
@@ -165,10 +170,21 @@ Step Subtitler::Impl::finish(Step step, std::vector<Sentence> sentences, int64_t
     return step;
   }
   report(Stage::kTranslating, 0);
+  const auto translating = std::chrono::steady_clock::now();
   if (translate && !sentences.empty()) sentences = translateSentences(sentences, *translator);
+  if (step.timing.pieceMs >= 0)
+    step.timing.translateMs =
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - translating).count();
   step.cues = formatter.format(previous, sentences);
-  if (!step.cues.empty()) previous = step.cues.back();
   step.readyUntilMs = std::max(readyUntilMs, step.fromMs);
+  // A cue pushed after the one before it never starts past its stretch: a
+  // reader that sorts the cues by stretch would lose it.
+  for (Cue& c : step.cues) {
+    if (c.startMs < step.readyUntilMs || step.readyUntilMs <= step.fromMs) continue;
+    c.startMs = step.readyUntilMs - 1;
+    c.endMs = std::max(c.endMs, c.startMs + 1);
+  }
+  if (!step.cues.empty()) previous = step.cues.back();
   step.status = atEnd ? StepStatus::kEndOfMedia : StepStatus::kCues;
   if (atEnd) step.endDetail = feed->state().endDetail;
   {
@@ -177,7 +193,9 @@ Step Subtitler::Impl::finish(Step step, std::vector<Sentence> sentences, int64_t
   }
   nextFromMs = step.readyUntilMs;
   ended = atEnd;
+  const auto saving = std::chrono::steady_clock::now();
   if (!save(step.cues, &step.errorCode)) step.status = StepStatus::kError;  // store_failed: the cues still go out
+  if (store) step.saveMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - saving).count();
   feed->dropBefore(std::min(first.atMs, spec.config.second.enabled ? second.atMs : first.atMs));
   report(Stage::kTranslating, 1.0);
   return step;

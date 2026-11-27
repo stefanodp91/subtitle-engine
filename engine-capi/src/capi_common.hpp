@@ -43,6 +43,8 @@ inline const char* messageFor(const std::string& code) {
   if (code == "store_failed") return "could not save the subtitles";
   if (code == "not_found") return "nothing saved yet";
   if (code == "other_media") return "the saved subtitles belong to another version or language";
+  if (code == "other_model") return "the saved subtitles were made by another model";
+  if (code == "other_format") return "the saved subtitles are in an earlier format";
   if (code == "unsupported_format") return "the catalog format is not supported";
   if (code == "no_chain") return "no translators between these languages";
   if (code == "unknown_model") return "the catalog has no model with that id";

@@ -2,6 +2,7 @@
 // double listen (DEC-886) put together stretch by stretch.
 
 #include <algorithm>
+#include <chrono>
 
 #include "dense_cue.hpp"
 #include "listen_merge.hpp"
@@ -11,6 +12,25 @@
 namespace subtitle_engine {
 
 namespace {
+
+double millisSince(std::chrono::steady_clock::time_point since) {
+  return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - since).count();
+}
+
+// Adds the time from its making to its end to *total: every way out of a wait counts.
+struct AddsTime {
+  explicit AddsTime(double* t) : total(t) {}
+  ~AddsTime() { *total += millisSince(start); }
+  double* total;
+  std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+};
+
+// The speech of spans (from the start of the samples) within the first untilMs.
+int64_t speechWithin(const std::vector<SpeechSpan>& spans, int64_t untilMs) {
+  int64_t total = 0;
+  for (const auto& s : spans) total += std::max<int64_t>(0, std::min(s.endMs, untilMs) - s.startMs);
+  return total;
+}
 
 std::vector<Cue> plain(const std::vector<HeardCue>& cues) {
   std::vector<Cue> out;
@@ -31,6 +51,7 @@ bool Subtitler::Impl::keeps(const std::vector<Cue>& cues) const {
 // A piece starts where the audio does, so its samples keep the film's time.
 Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const Stale& stale) {
   const auto& cfg = spec.config;
+  AddsTime waiting(&timing.waitMs);
   Piece piece;
   for (;;) {
     if (stale()) {
@@ -47,11 +68,22 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
       cursor.atMs = st.startMs;
       cursor.lastProbeMs = -1;
     }
-    const int64_t buffered = std::max<int64_t>(0, st.endMs - cursor.atMs);
-    const int64_t limit = std::min<int64_t>(rules.piece.count(), rules.firstPiece.count() * (cursor.sinceRamp + 1));
+    // A piece stops where a stretch already heard begins: nothing is heard twice.
+    int64_t heardAhead;
+    {
+      std::lock_guard<std::mutex> lock(readyMutex);
+      heardAhead = ready.nextStartAfter(cursor.atMs);
+    }
+    const int64_t bound = heardAhead < 0 ? INT64_MAX : heardAhead - cursor.atMs;
+    const int64_t buffered = std::min(std::max<int64_t>(0, st.endMs - cursor.atMs), bound);
+    const int64_t limit =
+        std::min<int64_t>({rules.piece.count(), rules.firstPiece.count() * (cursor.sinceRamp + 1), bound});
+    std::optional<std::vector<SpeechSpan>> lastSpeech;
     auto speechTo = [&](int64_t untilMs) {
+      AddsTime probe(&timing.speechProbeMs);
       const auto samples = feed->samples(cursor.atMs, untilMs);
-      return recognizer.speech(samples.data(), samples.size(), cursor.atMs);
+      lastSpeech = recognizer.speech(samples.data(), samples.size(), cursor.atMs);
+      return *lastSpeech;
     };
     std::optional<int64_t> cut;
     bool stalled = false;
@@ -67,12 +99,15 @@ Piece Subtitler::Impl::waitPiece(Cursor& cursor, const PieceRules& rules, const 
       cut = buffered;  // the download stands still: hear what arrived
       stalled = true;
     }
+    if (!cut && buffered >= bound) cut = bound;  // up to the stretch heard already, pause or not
+    if (cut) cut = std::min(*cut, bound);
     if (cut && *cut > 0) {
       piece.kind = Piece::Kind::kAudio;
       piece.atMs = cursor.atMs;
       piece.endMs = cursor.atMs + *cut;
       piece.samples = feed->samples(piece.atMs, piece.endMs);
       piece.ramp = cursor.sinceRamp == 0;
+      if (lastSpeech) piece.speechMs = speechWithin(*lastSpeech, *cut);
       cursor.atMs = piece.endMs;
       cursor.sinceRamp = stalled ? 0 : cursor.sinceRamp + 1;
       cursor.lastProbeMs = -1;
@@ -101,7 +136,11 @@ bool Subtitler::Impl::hearInto(const Piece& piece, std::vector<HeardCue>* into, 
   const bool retry = std::find(cfg.retryLanguages.begin(), cfg.retryLanguages.end(), language) != cfg.retryLanguages.end();
   options.temperatureInc = heardPieces > 0 && !language.empty() && retry ? cfg.temperatureInc : 0.0f;
   options.cancelled = stale;
-  Heard heard = recognizer.hear(piece.samples.data(), piece.samples.size(), piece.atMs, options);
+  Heard heard;
+  {
+    AddsTime hearing(&timing.hearMs);
+    heard = recognizer.hear(piece.samples.data(), piece.samples.size(), piece.atMs, options);
+  }
   ++heardPieces;
   if (heard.cancelled || stale()) return false;
   if (language.empty() && heard.spoken && !recognizer.speech(piece.samples.data(), piece.samples.size(), piece.atMs).empty())
@@ -118,6 +157,7 @@ void Subtitler::Impl::rehearDense(Piece& piece, std::vector<HeardCue>* cues, siz
   const std::vector<HeardCue> heard(cues->begin() + static_cast<long>(heardFrom), cues->end());
   const auto at = rehearFrom(heard, piece.atMs, cfg.rehear, cfg.pieces.minTail, cfg.second.loopRatio);
   if (!at) return;
+  timing.reheard = true;
   cues->erase(std::remove_if(cues->begin() + static_cast<long>(heardFrom), cues->end(),
                              [&](const HeardCue& c) { return c.cue.startMs >= *at; }),
               cues->end());
@@ -148,6 +188,8 @@ Listened Subtitler::Impl::listen(const Stale& stale) {
     out.readyUntilMs = p1.endMs;
     return out;
   }
+  timing.pieceMs = p1.endMs - p1.atMs;
+  timing.speechMs = p1.speechMs;
   report(Stage::kListening, 0);
   const size_t firstFrom = carryFirst.size();
   if (!hearInto(p1, &carryFirst, stale)) {

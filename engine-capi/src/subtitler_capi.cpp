@@ -2,6 +2,7 @@
 // subtitles saved for a film's version.
 
 #include <chrono>
+#include <cmath>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -163,6 +164,7 @@ SE_API se_subtitler* se_subtitler_open(se_listener* listener, const se_media_sou
     if (j.contains("store")) {
       spec.storePath = j.at("store").at("path").get<std::string>();
       spec.mediaId = j.at("store").at("media_id").get<std::string>();
+      take(j.at("store"), "model", &spec.storeModel);
     }
     if (j.contains("config")) spec.config = configFrom(j.at("config"));
   } catch (const std::exception&) {
@@ -210,6 +212,17 @@ SE_API char* se_subtitler_step(se_subtitler* subtitler, char** errorJson) try {
              {"audio_language", s.audioLanguage},
              {"cues", cuesJson(s.cues)}};
   if (!s.endDetail.empty()) reply["end_detail"] = s.endDetail;
+  if (s.saveMs >= 0) reply["save_ms"] = std::round(s.saveMs * 10) / 10;
+  if (s.timing.pieceMs >= 0) {
+    const auto tenth = [](double ms) { return std::round(ms * 10) / 10; };
+    reply["timing"] = {{"wait_ms", tenth(s.timing.waitMs)},
+                       {"speech_probe_ms", tenth(s.timing.speechProbeMs)},
+                       {"hear_ms", tenth(s.timing.hearMs)},
+                       {"translate_ms", tenth(std::max(0.0, s.timing.translateMs))},
+                       {"piece_ms", s.timing.pieceMs},
+                       {"speech_ms", s.timing.speechMs},
+                       {"reheard", s.timing.reheard}};
+  }
   return duplicate(toJson(reply));
 } catch (...) {
   setError(errorJson, "io_error");
@@ -226,13 +239,10 @@ SE_API void se_subtitler_cancel(se_subtitler* subtitler) {
 
 SE_API void se_subtitler_close(se_subtitler* subtitler) { delete subtitler; }
 
-SE_API char* se_subtitles_load(const char* path, const char* mediaId, const char* targetLanguage, char** errorJson) try {
-  if (!path || !mediaId || !targetLanguage) {
-    setError(errorJson, "invalid_argument");
-    return nullptr;
-  }
-  std::string code;
-  auto saved = SubtitleStore(path).load(mediaId, targetLanguage, &code);
+namespace {
+
+// What a load gives the caller: the stretches and their cues, or NULL and the error's code.
+char* savedJson(const std::optional<StoredSubtitles>& saved, const std::string& code, char** errorJson) {
   if (!saved) {
     setError(errorJson, code);
     return nullptr;
@@ -240,6 +250,41 @@ SE_API char* se_subtitles_load(const char* path, const char* mediaId, const char
   json ranges = json::array();
   for (const auto& r : saved->ranges.spans()) ranges.push_back({r.first, r.second});
   return duplicate(toJson(json{{"audio_language", saved->audioLanguage}, {"ranges", ranges}, {"cues", cuesJson(saved->cues)}}));
+}
+
+}  // namespace
+
+SE_API char* se_subtitles_load(const char* path, const char* mediaId, const char* targetLanguage, char** errorJson) try {
+  if (!path || !mediaId || !targetLanguage) {
+    setError(errorJson, "invalid_argument");
+    return nullptr;
+  }
+  std::string code;
+  auto saved = SubtitleStore(path).load(mediaId, targetLanguage, &code);
+  return savedJson(saved, code, errorJson);
+} catch (...) {
+  setError(errorJson, "corrupt_data");
+  return nullptr;
+}
+
+SE_API char* se_subtitles_load_store(const char* storeJson, const char* targetLanguage, char** errorJson) try {
+  std::string path, mediaId, model;
+  try {
+    const json store = json::parse(storeJson ? storeJson : "");
+    path = store.at("path").get<std::string>();
+    mediaId = store.at("media_id").get<std::string>();
+    take(store, "model", &model);
+  } catch (const std::exception&) {
+    setError(errorJson, "invalid_argument", "store_json is not a valid store");
+    return nullptr;
+  }
+  if (!targetLanguage) {
+    setError(errorJson, "invalid_argument");
+    return nullptr;
+  }
+  std::string code;
+  auto saved = SubtitleStore(path).load(mediaId, targetLanguage, model, &code);
+  return savedJson(saved, code, errorJson);
 } catch (...) {
   setError(errorJson, "corrupt_data");
   return nullptr;

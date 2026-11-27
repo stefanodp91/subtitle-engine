@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(subtitle_engine VERSION 0.4.5 LANGUAGES C CXX)
+project(subtitle_engine VERSION 0.5.0 LANGUAGES C CXX)
 
 option(SE_BUILD_TESTS "Build the engine tests" ON)
 option(SE_BUILD_TOOLS "Build se_cli" ON)

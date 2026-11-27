@@ -91,7 +91,9 @@ SE_API void se_listener_close(se_listener* listener);
 /* The queue that turns a film's audio into subtitles, one piece per step. The listener (and a
  * translator set later) must stay open while the se_subtitler is.
  * spec_json: {"target_language":"it","track_language":"eng","prompt":"…",
- *   "store":{"path":"…","media_id":"…"},"config":{…}}; every key of config is optional, with
+ *   "store":{"path":"…","media_id":"…","model":"…"},"config":{…}}; "model" (optional) names what
+ *   makes the cues, e.g. a speech model and its version: a saved file of another model is heard
+ *   again from the start. Every key of config is optional, with
  *   the engine's defaults: piece_ms, cut_min_ms, first_piece_ms, first_cut_ms, first_pause_min_ms,
  *   first_pause_open_ms, pause_min_ms, min_tail_ms, first_probe_every_ms, stall_ms, wait_poll_ms,
  *   read_ahead_ms, retry_languages, temperature_inc, line_chars, max_lines, min_on_screen_ms,
@@ -112,7 +114,14 @@ SE_API int se_subtitler_set_translator(se_subtitler* subtitler, se_translator* t
 
 /* Blocking: hears, cleans, translates and shapes one piece. Returns
  * {"status":"cues"|"end_of_media"|"cancelled"|"translator_needed","from_ms":…,"ready_until_ms":…,
- *  "audio_language":"en","cues":[{"start_ms","end_ms","text"}]}, or NULL with code io_error,
+ *  "audio_language":"en","cues":[{"start_ms","end_ms","text"}]}, with "save_ms" (how long the
+ * step's save took, the file on the disk included, to a tenth of a millisecond) when the spec has
+ * a store and the step saved, and, when the step heard a piece, "timing":{"wait_ms" (waiting for
+ * the piece: the audio's bytes and the speech detector's probes), "speech_probe_ms" (of which the
+ * detector), "hear_ms" (the recognizer), "translate_ms", "piece_ms" (the media the piece covered,
+ * before a packed cue cut it back), "speech_ms" (the speech found in the piece; -1 if not asked),
+ * "reheard" (a cue packed denser than speech cut the piece back)}, for diagnostics; or NULL with
+ * code io_error,
  * no_audio, unsupported_codec, needs_end_of_file, store_failed or decode_error. */
 SE_API char* se_subtitler_step(se_subtitler* subtitler, char** error_json);
 
@@ -121,9 +130,15 @@ SE_API void se_subtitler_seek(se_subtitler* subtitler, long long position_ms);
 SE_API void se_subtitler_cancel(se_subtitler* subtitler);
 SE_API void se_subtitler_close(se_subtitler* subtitler);
 
-/* The subtitles saved for a film's version: {"audio_language":"en","ranges":[[0,64000]],
- * "cues":[{"start_ms","end_ms","text"}]}, or NULL with code not_found, corrupt_data or other_media. */
+/* The subtitles saved for a film's version, whatever model made them: {"audio_language":"en",
+ * "ranges":[[0,64000]],"cues":[{"start_ms","end_ms","text"}]}, or NULL with code not_found,
+ * corrupt_data, other_format or other_media. */
 SE_API char* se_subtitles_load(const char* path, const char* media_id, const char* target_language, char** error_json);
+
+/* The same, read with the "store" object a subtitler's spec takes ({"path","media_id","model"}):
+ * only the cues made by that model, else NULL with code other_model; invalid_argument for a
+ * store_json that is not one. */
+SE_API char* se_subtitles_load_store(const char* store_json, const char* target_language, char** error_json);
 
 /* ---- The model catalog --------------------------------------------------- */
 
