@@ -4,6 +4,7 @@
 #include "subtitle_engine/subtitler.hpp"
 
 #include <algorithm>
+#include <chrono>
 
 #include "sentence_joiner.hpp"
 #include "subtitler_impl.hpp"
@@ -185,7 +186,9 @@ Step Subtitler::Impl::finish(Step step, std::vector<Sentence> sentences, int64_t
   }
   nextFromMs = step.readyUntilMs;
   ended = atEnd;
+  const auto saving = std::chrono::steady_clock::now();
   if (!save(step.cues, &step.errorCode)) step.status = StepStatus::kError;  // store_failed: the cues still go out
+  if (store) step.saveMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - saving).count();
   feed->dropBefore(std::min(first.atMs, spec.config.second.enabled ? second.atMs : first.atMs));
   report(Stage::kTranslating, 1.0);
   return step;

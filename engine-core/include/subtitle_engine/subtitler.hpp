@@ -50,6 +50,7 @@ struct Step {
   std::string audioLanguage, errorCode;
   std::vector<Cue> cues;
   std::string endDetail;  // kEndOfMedia: why the media ended, in numbers, for diagnostics
+  double saveMs = -1;     // with a store: how long the step's save took, the file on the disk included
 };
 
 enum class Stage { kAudio, kListening, kTranslating };

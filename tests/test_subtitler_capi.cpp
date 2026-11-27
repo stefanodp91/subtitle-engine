@@ -172,6 +172,42 @@ TEST(SubtitlerCapi, LoadsSavedSubtitles) {
   std::fclose(f.file);
 }
 
+// Each step with a store says how long its save took, the file written to the disk included;
+// without a store it says nothing of it.
+TEST(SubtitlerCapi, StepSaysHowLongItsSaveTook) {
+  if (!haveSpeech()) GTEST_SKIP() << "run scripts/fetch_test_models.sh and scripts/make_speech_fixtures.sh";
+  const std::string dir = std::string(SE_TMP) + "/capi_store_time";
+  ::mkdir(dir.c_str(), 0755);
+  const std::string path = dir + "/english.json";
+  std::remove(path.c_str());
+  char* error = nullptr;
+  se_listener* listener = se_listener_open(listenerSpec().c_str(), &error);
+  ASSERT_NE(listener, nullptr) << errorCode(error);
+  se_translator* translator = se_translator_open(translatorSpec().c_str(), &error);
+  ASSERT_NE(translator, nullptr) << errorCode(error);
+  for (const bool stored : {true, false}) {
+    CFile f;
+    se_media_source source = sourceOver(&f, fixture("speech/english.mkv"));
+    json spec{{"target_language", "it"}};
+    if (stored) spec["store"] = {{"path", path}, {"media_id", "english-v1"}};
+    se_subtitler* sub = se_subtitler_open(listener, &source, spec.dump().c_str(), nullptr, nullptr, &error);
+    ASSERT_NE(sub, nullptr) << errorCode(error);
+    ASSERT_EQ(se_subtitler_set_translator(sub, translator, &error), 1);
+    json step = takeJson(se_subtitler_step(sub, &error));
+    ASSERT_EQ(step.at("status"), "cues");
+    if (stored) {
+      ASSERT_TRUE(step.contains("save_ms"));
+      EXPECT_GE(step.at("save_ms").get<double>(), 0.0);
+    } else {
+      EXPECT_FALSE(step.contains("save_ms"));
+    }
+    se_subtitler_close(sub);
+    std::fclose(f.file);
+  }
+  se_translator_close(translator);
+  se_listener_close(listener);
+}
+
 // The saved lines read with the same store object the subtitler is given:
 // the model that made them must be the one asked for. The plain load keeps
 // reading any model. The output is the one a host splits by stretch.

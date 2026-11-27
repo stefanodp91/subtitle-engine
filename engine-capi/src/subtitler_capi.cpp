@@ -2,6 +2,7 @@
 // subtitles saved for a film's version.
 
 #include <chrono>
+#include <cmath>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -211,6 +212,7 @@ SE_API char* se_subtitler_step(se_subtitler* subtitler, char** errorJson) try {
              {"audio_language", s.audioLanguage},
              {"cues", cuesJson(s.cues)}};
   if (!s.endDetail.empty()) reply["end_detail"] = s.endDetail;
+  if (s.saveMs >= 0) reply["save_ms"] = std::round(s.saveMs * 10) / 10;
   return duplicate(toJson(reply));
 } catch (...) {
   setError(errorJson, "io_error");
